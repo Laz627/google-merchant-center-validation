@@ -24,6 +24,8 @@
   const dz = $("#dropZone");
   const fileInput = $("#fileInput");
   const fileName = $("#fileName");
+  const delimiterInput = $("#delimiter");
+  const encodingInput = $("#encoding");
 
   function updateSelectedFile(){
     const name = fileInput?.files?.[0]?.name;
@@ -140,15 +142,21 @@
   }
 
   async function validate(kind){
-    const f = fileInput.files?.[0];
+    const f = currentFile();
     if(!f){ alert("Choose a file first."); return; }
     const fd = new FormData();
     fd.append("file", f);
     fd.append("profile", profile());
+    const delimiter = delimiterInput?.value?.trim();
+    if(delimiter){ fd.append("delimiter", delimiter); }
+    const encoding = encodingInput?.value?.trim();
+    if(encoding){ fd.append("encoding", encoding); }
     const endpoint = kind === "csv" ? "/api/validate-csv" : "/api/validate-json";
     resultsCard?.classList.add("hidden");
     markStep(2);
     setLoading(true);
+    latestBuckets = {errors: [], warnings: [], opportunities: []};
+    latestIssues = [];
     try{
       const res = await fetch(endpoint, {method:"POST", body: fd});
       if(!res.ok) throw new Error(await res.text() || "Validation failed");
