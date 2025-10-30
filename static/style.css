@@ -130,21 +130,15 @@ input{background:#0e1016;color:var(--text);border:1px solid var(--border);border
 .muted{color:var(--muted)}
 
 .results .result-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.results-group{background:rgba(14,17,25,.85);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 12px 28px rgba(0,0,0,.28);display:flex;flex-direction:column;gap:16px}
-.results-group.errors{border-color:rgba(255,122,122,.35);box-shadow:0 18px 32px rgba(255,122,122,.12)}
-.results-group.warnings{border-color:rgba(255,205,77,.28);box-shadow:0 18px 32px rgba(255,205,77,.12)}
-.results-group.opportunities{border-color:rgba(95,214,166,.28);box-shadow:0 18px 32px rgba(95,214,166,.12)}
-.group-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.group-header h4{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.group-count{padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--border);font-size:12px;color:var(--text)}
+.results .result-columns>div{background:rgba(14,17,25,.85);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 12px 28px rgba(0,0,0,.28)}
+.results .result-columns h4{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 
 .issues{display:flex;flex-direction:column;gap:12px}
-.issue-row{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:14px;border:1px solid rgba(124,92,255,.25);background:rgba(18,21,30,.92);box-shadow:0 12px 24px rgba(0,0,0,.22)}
-.issue-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.issue-pill{padding:6px 12px;border-radius:999px;background:rgba(124,92,255,.2);color:var(--accent);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-.issue-field{background:rgba(124,92,255,.14);padding:5px 10px;border-radius:8px;font-size:12px;color:var(--text)}
-.issue-message{margin:0;color:var(--text);font-size:13px;line-height:1.5}
-.empty{padding:16px;border:1px dashed var(--border);border-radius:12px;text-align:center;color:var(--muted);background:rgba(15,18,25,.82)}
+.issue-row{display:grid;grid-template-columns:120px 180px 1fr;gap:12px;padding:14px;border-radius:14px;border:1px solid var(--border);background:rgba(17,19,26,.92);box-shadow:0 12px 24px rgba(0,0,0,.22)}
+.issue-row .badge{justify-self:flex-start;padding:6px 12px;border-radius:999px;background:rgba(124,92,255,.18);color:var(--accent);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.issue-row .field code{background:rgba(124,92,255,.14);padding:4px 8px;border-radius:8px;display:inline-block;font-size:12px}
+.issue-row .msg{color:var(--text);font-size:13px;line-height:1.5}
+.empty{padding:14px;border:1px dashed var(--border);border-radius:12px;text-align:center;color:var(--muted);background:rgba(15,18,25,.82)}
 
 @media (max-width:900px){
   .results .result-columns{grid-template-columns:1fr}

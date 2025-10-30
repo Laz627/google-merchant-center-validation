@@ -103,28 +103,18 @@
           <section id="resultsCard" class="results hidden">
             <div class="results-header">
               <h3>Results</h3>
-              <p id="resultsSummary" class="results-summary muted">Review the issues grouped by severity. Export or resolve the most critical rows first.</p>
             </div>
             <div class="result-columns">
-              <div class="results-group errors">
-                <header class="group-header">
-                  <h4>Errors</h4>
-                  <span id="resultsErrorsCount" class="group-count">0</span>
-                </header>
+              <div>
+                <h4>Errors</h4>
                 <div id="results-errors" class="issues"></div>
               </div>
-              <div class="results-group warnings">
-                <header class="group-header">
-                  <h4>Warnings</h4>
-                  <span id="resultsWarningsCount" class="group-count">0</span>
-                </header>
+              <div>
+                <h4>Warnings</h4>
                 <div id="results-warnings" class="issues"></div>
               </div>
-              <div class="results-group opportunities">
-                <header class="group-header">
-                  <h4>Opportunities</h4>
-                  <span id="resultsOppsCount" class="group-count">0</span>
-                </header>
+              <div>
+                <h4>Opportunities</h4>
                 <div id="results-opps" class="issues"></div>
               </div>
             </div>
@@ -132,94 +122,37 @@
         </div>
 
         <div class="panel panel-spec" data-panel="spec" hidden>
-          <p class="muted">Understand the fields enforced by validation. Each card outlines the minimum data to ship, conditional rules we check, and helpful extras to boost your product coverage.</p>
+          <p class="muted">Understand the fields. Each card highlights whether the field is required, recommended, or conditional and any dependencies that are checked during validation.</p>
           <div class="spec-grid">
             <article class="spec-card">
-              <header class="spec-card-header">
-                <h4 class="field-name">Core product data</h4>
-                <span class="badge required">Required</span>
-              </header>
-              <p class="field-desc">Attributes every item must include.</p>
-              <dl class="spec-list">
-                <div>
-                  <dt>Required</dt>
-                  <dd><code>id</code>, <code>title</code>, <code>description</code>, <code>link</code>, <code>image_link</code>, <code>availability</code>, <code>price</code></dd>
-                </div>
-                <div>
-                  <dt>Format &amp; limits</dt>
-                  <dd>Title ≤ 150 chars, description ≤ 5000 chars, price as <code>number currency</code> (e.g. <code>15.00 USD</code>).</dd>
-                </div>
-                <div>
-                  <dt>Best practice</dt>
-                  <dd>Use the landing page URL in <code>link</code> and HTTPS images ≥ 500px on the longest side.</dd>
-                </div>
-              </dl>
+              <span class="badge required">Required</span>
+              <h4 class="field-name">Basic product data</h4>
+              <p class="field-desc"><code>id</code>, <code>title</code>, <code>description</code>, <code>link</code>, <code>image_link</code>, <code>availability</code>, <code>price</code></p>
+              <ul class="dependencies">
+                <li>Title ≤ 150, description ≤ 5000</li>
+                <li>Availability ∈ in_stock / out_of_stock / preorder / backorder</li>
+                <li>Price format: <code>15.00 USD</code></li>
+              </ul>
             </article>
 
             <article class="spec-card">
-              <header class="spec-card-header">
-                <h4 class="field-name">Identifiers</h4>
-                <span class="badge conditional">Conditional</span>
-              </header>
-              <p class="field-desc">Used to match your listings to Google's catalog.</p>
-              <dl class="spec-list">
-                <div>
-                  <dt>Required when</dt>
-                  <dd><code>identifier_exists</code> ≠ <code>no</code></dd>
-                </div>
-                <div>
-                  <dt>Options</dt>
-                  <dd>Submit a valid <code>gtin</code> or a combination of <code>brand</code> + <code>mpn</code>.</dd>
-                </div>
-                <div>
-                  <dt>Validation</dt>
-                  <dd>GTIN must pass the GS1 checksum and be 8/12/13/14 digits. Brand is case-sensitive.</dd>
-                </div>
-              </dl>
+              <span class="badge conditional">Conditional</span>
+              <h4 class="field-name">Identifiers</h4>
+              <p class="field-desc">If <code>identifier_exists</code> ≠ <code>no</code>, submit <code>gtin</code> or (<code>brand</code> + <code>mpn</code>). GTIN must pass GS1 checksum.</p>
             </article>
 
             <article class="spec-card">
-              <header class="spec-card-header">
-                <h4 class="field-name">Apparel (US)</h4>
-                <span class="badge required">Profile</span>
-              </header>
-              <p class="field-desc">Variant attributes for clothing, shoes, and accessories feeds.</p>
-              <dl class="spec-list">
-                <div>
-                  <dt>Required</dt>
-                  <dd><code>item_group_id</code>, <code>color</code>, <code>gender</code>, <code>age_group</code>, <code>size</code></dd>
-                </div>
-                <div>
-                  <dt>Consistency</dt>
-                  <dd>Variants must differ by color, size, material, pattern, age group, or gender.</dd>
-                </div>
-                <div>
-                  <dt>Additional</dt>
-                  <dd>Add <code>size_type</code>, <code>size_system</code>, <code>material</code>, <code>pattern</code> for better matching.</dd>
-                </div>
-              </dl>
+              <span class="badge required">Profile</span>
+              <h4 class="field-name">Apparel (US)</h4>
+              <p class="field-desc"><code>item_group_id</code>, <code>color</code>, <code>gender</code>, <code>age_group</code>, <code>size</code>.</p>
+              <p class="dependencies">Variants must differ by color / size / material / pattern / age_group / gender.</p>
             </article>
 
             <article class="spec-card">
-              <header class="spec-card-header">
-                <h4 class="field-name">Local inventory (US)</h4>
-                <span class="badge recommended">Profile</span>
-              </header>
-              <p class="field-desc">Surface store availability for local product listings.</p>
-              <dl class="spec-list">
-                <div>
-                  <dt>Required</dt>
-                  <dd><code>id</code>, <code>store_code</code>, <code>price</code>, <code>availability</code></dd>
-                </div>
-                <div>
-                  <dt>Recommended</dt>
-                  <dd><code>quantity</code>, <code>sale_price</code>, <code>pickup_method</code>, <code>pickup_sla</code></dd>
-                </div>
-                <div>
-                  <dt>Eligibility</dt>
-                  <dd>Ensure store is verified in Business Profile and uses U.S. currency <code>USD</code>.</dd>
-                </div>
-              </dl>
+              <span class="badge recommended">Profile</span>
+              <h4 class="field-name">Local inventory (US)</h4>
+              <p class="field-desc"><code>id</code>, <code>store_code</code>, <code>price</code>, <code>availability</code>.</p>
+              <p class="dependencies">Recommended: <code>quantity</code>, <code>pickup_method</code>, <code>pickup_sla</code>.</p>
             </article>
           </div>
         </div>

@@ -58,10 +58,6 @@
   const resultsErrors = $("#results-errors");
   const resultsWarnings = $("#results-warnings");
   const resultsOpps = $("#results-opps");
-  const resultsErrorsCount = $("#resultsErrorsCount");
-  const resultsWarningsCount = $("#resultsWarningsCount");
-  const resultsOppsCount = $("#resultsOppsCount");
-  const resultsSummary = $("#resultsSummary");
   const resultsCard = $("#resultsCard");
 
   function renderIssues(container, issues, countEl){
@@ -108,22 +104,9 @@
       const res = await fetch(endpoint, {method:"POST", body: fd});
       if(!res.ok) throw new Error(await res.text() || "Validation failed");
       const data = await res.json();
-      renderIssues(resultsErrors, data.errors, resultsErrorsCount);
-      renderIssues(resultsWarnings, data.warnings, resultsWarningsCount);
-      renderIssues(resultsOpps, data.opportunities, resultsOppsCount);
-      if(resultsSummary){
-        const err = data.errors?.length || 0;
-        const warn = data.warnings?.length || 0;
-        const opp = data.opportunities?.length || 0;
-        const parts = [
-          err ? `${err} ${err===1?"error":"errors"}` : null,
-          warn ? `${warn} ${warn===1?"warning":"warnings"}` : null,
-          opp ? `${opp} ${opp===1?"opportunity":"opportunities"}` : null
-        ].filter(Boolean);
-        resultsSummary.textContent = parts.length
-          ? `Found ${parts.join(", ")}. Prioritize errors, then warnings.`
-          : "No blocking issues found. Review opportunities to improve feed quality.";
-      }
+      renderIssues(resultsErrors, data.errors);
+      renderIssues(resultsWarnings, data.warnings);
+      renderIssues(resultsOpps, data.opportunities);
       markStep(3);
       resultsCard?.classList.remove("hidden");
     }catch(e){
