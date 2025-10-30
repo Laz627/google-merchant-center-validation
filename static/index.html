@@ -1,93 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Google Merchant Center Product Feed Validator</title>
-  <link rel="stylesheet" href="/static/style.css" />
-</head>
-<body>
-  <header class="topbar">
-    <h1>Google Merchant Center Product Feed Validator</h1>
-    <nav class="tabs">
-      <button id="tab-validate" class="tab active" type="button">Validate</button>
-      <button id="tab-spec" class="tab" type="button">Spec &amp; Requirements</button>
-      <a class="ext" href="https://support.google.com/merchants/answer/7052112" target="_blank" rel="noopener">GMC Docs ↗</a>
-    </nav>
-  </header>
-
-  <main>
-    <!-- VALIDATE PANEL -->
-    <section id="panel-validate" class="panel active" aria-labelledby="tab-validate">
-      <div class="upload-area">
-        <div class="controls">
-          <button id="browseBtn" type="button">Choose file</button>
-          <input id="fileInput" type="file" accept=".csv,.json" hidden />
-          <span id="fileName" class="file-name">No file chosen</span>
-          <select class="profile-select" id="profileSelectValidate" aria-label="Profile">
-            <option value="general" selected>General</option>
-            <option value="apparel">Apparel</option>
-            <option value="local_inventory">Local inventory</option>
-          </select>
-          <button id="runCsv" type="button">Validate CSV</button>
-          <button id="runJson" type="button">Validate JSON</button>
-        </div>
-        <div id="dropZone" class="drop-zone" aria-label="Drop zone">Drop CSV/JSON here</div>
-      </div>
-
-      <!-- Results -->
-      <section class="results">
-        <h2>Results</h2>
-        <div id="resultsCounts" class="summary"></div>
-        <div id="resultsContainer" class="grid"></div>
-      </section>
-    </section>
-
-    <!-- SPEC PANEL -->
-    <section id="panel-spec" class="panel" aria-labelledby="tab-spec">
-      <div class="spec-controls">
-        <div class="left">
-          <label><input type="checkbox" value="required" checked /> Required</label>
-          <label><input type="checkbox" value="conditional" checked /> Conditional</label>
-          <label><input type="checkbox" value="recommended" checked /> Recommended</label>
-          <label><input type="checkbox" value="optional" checked /> Optional</label>
-        </div>
-        <div class="right">
-          <label for="profileSelect">Profile:</label>
-          <select class="profile-select" id="profileSelect">
-            <option value="general" selected>General</option>
-            <option value="apparel">Apparel</option>
-            <option value="local_inventory">Local inventory</option>
-          </select>
-          <input id="specSearch" type="search" placeholder="Search attributes (e.g., gtin, color, sale_price)" />
-          <span>Showing <strong id="specCount">0</strong> fields</span>
-        </div>
-      </div>
-
-      <div id="specGrid" class="grid"></div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <small>Built for quick validation &amp; browsing of attribute requirements.</small>
-  </footer>
-
-  <script>
-    // simple tab switcher (no external deps)
-    const validateTab = document.getElementById('tab-validate');
-    const specTab = document.getElementById('tab-spec');
-    const validatePanel = document.getElementById('panel-validate');
-    const specPanel = document.getElementById('panel-spec');
-    function setActive(tab) {
-      const isValidate = tab === 'validate';
-      validateTab.classList.toggle('active', isValidate);
-      specTab.classList.toggle('active', !isValidate);
-      validatePanel.classList.toggle('active', isValidate);
-      specPanel.classList.toggle('active', !isValidate);
-    }
-    validateTab.addEventListener('click', () => setActive('validate'));
-    specTab.addEventListener('click', () => setActive('spec'));
-  </script>
-  <script src="/static/app.js" defer></script>
-</body>
-</html>
+<!doctype html><html><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Google Merchant Center Product Feed Validator</title>
+<link rel="stylesheet" href="/static/style.css"/></head><body>
+<header class="topbar"><div class="brand">Google Merchant Center Product Feed Validator</div>
+<nav class="menu"><button class="toggle active" data-tab="validate">Validate</button>
+<button class="toggle" data-tab="spec">Spec & Requirements</button>
+<a class="nav" target="_blank" href="https://support.google.com/merchants/answer/7052112">GMC Docs ↗</a></nav></header>
+<main class="container">
+<section class="tabpane active" data-panel="validate">
+<div class="controls"><label>Profile:
+<select class="profile-select"><option value="general">General</option>
+<option value="apparel">Apparel (US)</option>
+<option value="local_inventory">Local Inventory (US)</option></select></label></div>
+<div class="uploader"><div id="dropZone" class="drop" tabindex="0">
+<div class="drop-inner"><div class="drag">Drag & drop your feed (CSV/JSON)</div>
+<button id="browseBtn" type="button" class="btn">Browse files</button>
+<input id="fileInput" type="file" style="display:none" accept=".csv,.json,.txt"/>
+<div id="fileName" class="filename">No file selected yet.</div></div></div>
+<div class="actions"><button id="runCsv" class="btn primary">Validate CSV</button>
+<button id="runJson" class="btn">Validate JSON</button></div></div>
+<div class="results"><h3>Validation Results</h3>
+<div class="table-toolbar"><span class="pill error">Errors: <span id="countErrors">0</span></span>
+<span class="pill warning">Warnings: <span id="countWarnings">0</span></span>
+<span class="pill opp">Opportunities: <span id="countOpps">0</span></span></div>
+<table class="results-table" id="results-table">
+<thead><tr><th>Row</th><th>Field</th><th>Severity</th><th>Message</th></tr></thead>
+<tbody id="results-body"><tr class="empty"><td colspan="4">Run a validation to see results.</td></tr></tbody></table></div>
+</section>
+<section class="tabpane" data-panel="spec" hidden>
+<div class="spec-controls"><div class="status-filter">
+<label><input type="checkbox" value="required" checked> Required</label>
+<label><input type="checkbox" value="conditional" checked> Conditional</label>
+<label><input type="checkbox" value="recommended" checked> Recommended</label>
+<label><input type="checkbox" value="optional" checked> Optional</label></div>
+<input id="specSearch" class="spec-search" placeholder="Search attributes"/>
+<div class="spec-count">Showing <span id="specCount">0</span> fields</div></div>
+<div class="controls"><label>Profile:
+<select class="profile-select"><option value="general">General</option>
+<option value="apparel">Apparel (US)</option>
+<option value="local_inventory">Local Inventory (US)</option></select></label></div>
+<div id="specGrid" class="spec-grid"></div></section></main>
+<script src="/static/app.js" defer></script></body></html>
