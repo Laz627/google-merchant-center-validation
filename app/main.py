@@ -6,7 +6,12 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 import csv, io, json, re
-from app.validators.gtin import is_valid_gtin
+# AFTER (tolerant to both layouts; avoids third-party "validators" collision)
+try:
+    from app.validators.gtin import is_valid_gtin  # app-scoped package path
+except ModuleNotFoundError:
+    from gtin import is_valid_gtin                 # flat layout fallback
+
 
 
 from validators.gtin import is_valid_gtin
