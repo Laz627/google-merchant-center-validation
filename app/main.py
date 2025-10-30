@@ -6,6 +6,8 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 import csv, io, json, re
+from app.validators.gtin import is_valid_gtin
+
 
 from validators.gtin import is_valid_gtin
 
