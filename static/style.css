@@ -8,7 +8,7 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:14px/1.
 .menu{display:flex;gap:10px;align-items:center}
 .menu .nav{color:var(--muted);text-decoration:none;margin-left:8px}
 
-.container{max-width:1080px;margin:24px auto;padding:0 12px}
+.container{max-width:1180px;margin:24px auto;padding:0 12px}
 
 .toggle{background:#141826;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
 .toggle.active{border-color:rgba(124,92,255,.55);box-shadow:0 0 0 3px rgba(124,92,255,.18) inset}
@@ -20,22 +20,26 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:14px/1.
 select, .btn{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#141826;color:var(--text)}
 .btn.primary{background:linear-gradient(180deg,#6e57ff,#5e48ff);border-color:rgba(124,92,255,.6)}
 
-.uploader .drop{border:2px dashed rgba(124,92,255,.35);border-radius:14px;padding:16px;background:var(--card)}
+.uploader .drop{border:2px dashed rgba(124,92,255,.35);border-radius:14px;padding:16px;background:var(--card); outline:none}
+.uploader .drop.dragover{border-color:#7c5cff; background:#0e1220}
 .filename{margin-top:8px;color:var(--muted)}
 .actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
 
-.results.threecol{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
-.result-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;min-height:120px}
-.count{color:var(--muted);font-weight:400;margin-left:6px}
+.table-toolbar{display:flex;gap:8px;align-items:center;margin:12px 0}
+.pill{display:inline-block;padding:6px 10px;border-radius:20px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
+.pill.error{border-color:rgba(255,122,122,.35);color:#ffb0b0}
+.pill.warning{border-color:rgba(255,205,77,.35);color:#ffd98b}
+.pill.opp{border-color:rgba(124,92,255,.35);color:#c2b7ff}
 
-.issue-row{ background:#0f1220; border:1px dashed rgba(124,92,255,.35); border-radius:12px; padding:10px; margin-bottom:8px; }
-.issue-header{ display:flex; gap:8px; align-items:center; margin-bottom:6px; }
-.issue-pill{ padding:3px 8px; border-radius:999px; border:1px solid var(--border); font-size:12px; }
-.issue-field{ background:rgba(124,92,255,.12); padding:2px 6px; border-radius:6px; font-size:12px; }
-.issue-message{ margin:0; color:var(--text); }
-.empty{ color:var(--muted); font-style:italic; }
+.results-table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.results-table thead th{position:sticky;top:0;background:#0e1220;border-bottom:1px solid var(--border);text-align:left;padding:10px;font-weight:600}
+.results-table tbody td{padding:10px;border-bottom:1px solid var(--border);vertical-align:top}
+.results-table tbody tr:last-child td{border-bottom:none}
+.results-table .sev-error{color:#ffb0b0}
+.results-table .sev-warning{color:#ffd98b}
+.results-table .sev-opportunity{color:#c2b7ff}
+.empty td{color:var(--muted);font-style:italic;text-align:center}
 
-/* Spec controls and grid */
 .spec-controls{ display:grid; grid-template-columns:1fr 300px auto; gap:12px; align-items:center; margin:12px 0 16px; }
 .status-filter{ display:flex; gap:12px; font-size:13px; color:var(--muted); }
 .spec-search{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#11141c; color:var(--text); }
@@ -47,6 +51,7 @@ select, .btn{padding:10px 12px;border-radius:10px;border:1px solid var(--border)
 .badge.required{ background:rgba(255,122,122,.16); color:#ffb0b0; border-color:rgba(255,122,122,.35); }
 .badge.conditional{ background:rgba(255,205,77,.15); color:#ffd98b; border-color:rgba(255,205,77,.35); }
 .badge.recommended{ background:rgba(124,92,255,.16); color:#c2b7ff; border-color:rgba(124,92,255,.35); }
+.badge.optional{ background:rgba(90,132,255,.16); color:#b7c6ff; border-color:rgba(90,132,255,.35); }
 .field-name{ margin:0 0 6px; font-size:14px; font-weight:700; }
 .field-desc{ margin:0 0 8px; font-size:13px; color:var(--muted); line-height:1.45; }
 .field-meta .meta-pill{ display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--border); color:var(--muted); }
