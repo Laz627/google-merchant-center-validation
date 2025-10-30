@@ -1,4 +1,3 @@
-
 import re
 def is_valid_gtin(gtin: str) -> bool:
     # Validate GTIN (8/12/13/14) using GS1 mod-10
