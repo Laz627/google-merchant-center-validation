@@ -29,9 +29,9 @@
       </div>
 
       <div class="uploader">
-        <div class="drop">
+        <div id="dropZone" class="drop" tabindex="0" aria-label="Drop your feed here">
           <div class="drop-inner">
-            <div class="drag">Drag & drop your feed</div>
+            <div class="drag">Drag & drop your feed (CSV/JSON)</div>
             <button id="browseBtn" type="button" class="btn">Browse files</button>
             <input id="fileInput" type="file" style="display:none" accept=".csv,.json,.txt"/>
             <div id="fileName" class="filename">No file selected yet.</div>
@@ -43,19 +43,26 @@
         </div>
       </div>
 
-      <div class="results threecol">
-        <div>
-          <h3>Errors <span id="countErrors" class="count"></span></h3>
-          <div id="results-errors" class="result-box"></div>
+      <div class="results">
+        <h3>Validation Results</h3>
+        <div class="table-toolbar">
+          <span class="pill error">Errors: <span id="countErrors">0</span></span>
+          <span class="pill warning">Warnings: <span id="countWarnings">0</span></span>
+          <span class="pill opp">Opportunities: <span id="countOpps">0</span></span>
         </div>
-        <div>
-          <h3>Warnings <span id="countWarnings" class="count"></span></h3>
-          <div id="results-warnings" class="result-box"></div>
-        </div>
-        <div>
-          <h3>Opportunities <span id="countOpps" class="count"></span></h3>
-          <div id="results-opps" class="result-box"></div>
-        </div>
+        <table class="results-table" id="results-table">
+          <thead>
+            <tr>
+              <th>Row</th>
+              <th>Field</th>
+              <th>Severity</th>
+              <th>Message</th>
+            </tr>
+          </thead>
+          <tbody id="results-body">
+            <tr class="empty"><td colspan="4">Run a validation to see results.</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
@@ -65,6 +72,7 @@
           <label><input type="checkbox" value="required" checked> Required</label>
           <label><input type="checkbox" value="conditional" checked> Conditional</label>
           <label><input type="checkbox" value="recommended" checked> Recommended</label>
+          <label><input type="checkbox" value="optional" checked> Optional</label>
         </div>
         <input id="specSearch" class="spec-search" placeholder="Search attributes (e.g., gtin, color, sale_price)"/>
         <div class="spec-count">Showing <span id="specCount">0</span> fields</div>
