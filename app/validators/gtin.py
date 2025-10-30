@@ -3,8 +3,10 @@ def is_valid_gtin(gtin: str) -> bool:
     if gtin is None: return False
     s = re.sub(r"[^0-9]", "", gtin)
     if len(s) not in (8,12,13,14): return False
-    try: digits = list(map(int, s))
-    except ValueError: return False
+    try:
+        digits = list(map(int, s))
+    except ValueError:
+        return False
     check = digits[-1]; body = digits[:-1]
     total = 0; weight = 3
     for d in reversed(body):
