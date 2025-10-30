@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
+  <header class="site-header">
     <div class="brand">
       <div class="logo">G</div>
       <div class="titles">
@@ -23,108 +23,254 @@
   </header>
 
   <main class="container">
-    <section class="hero card">
-      <div class="hero-meta">
-        <span class="pill">≤ 50 000 rows per run</span>
-        <span class="pill">JSON / CSV</span>
-        <span class="pill">Checks formatting, enums, & dependencies</span>
-      </div>
-      <h2>Validate your product feed</h2>
-      <p>Upload a JSON array or CSV with headers. We check required vs recommended fields and rule dependencies for the Google Merchant Center spec.</p>
+    <section class="intro">
+      <div class="info-card">
+        <ul class="meta-list">
+          <li>≤ 50 000 rows per run</li>
+          <li>JSON / CSV</li>
+          <li>Checks formatting, enums, &amp; dependencies</li>
+        </ul>
+        <h2>Validate your product feed</h2>
+        <p>Upload a JSON array or CSV with headers. We check required vs recommended fields and rule dependencies for the Google Merchant Center spec.</p>
 
-      <div class="toggle-tabs" role="tablist">
-        <button class="toggle active" data-tab="validate" role="tab">Validate</button>
-        <button class="toggle" data-tab="spec" role="tab">Spec & Requirements</button>
-      </div>
-
-      <div class="panel panel-validate" data-panel="validate">
-        <div class="steps">
-          <div class="step active"><span>1</span><small>Add File</small></div>
-          <div class="step"><span>2</span><small>Validate</small></div>
-          <div class="step"><span>3</span><small>Review & Export</small></div>
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="validate" role="tab">Validate</button>
+          <button class="tab" data-tab="spec" role="tab">Spec &amp; Requirements</button>
         </div>
 
-        <div class="controls">
-          <label>Profile
-            <select class="profile-select">
-              <option value="general">General</option>
-              <option value="apparel">Apparel (US)</option>
-              <option value="local_inventory">Local Inventory (US)</option>
-            </select>
-          </label>
-        </div>
+        <div class="panel panel-validate visible" data-panel="validate">
+          <ul class="flow-steps">
+            <li class="step current" data-step="1">
+              <span class="step-number">1</span>
+              <span class="step-label">Add file</span>
+            </li>
+            <li class="step" data-step="2">
+              <span class="step-number">2</span>
+              <span class="step-label">Validate</span>
+            </li>
+            <li class="step" data-step="3">
+              <span class="step-number">3</span>
+              <span class="step-label">Review &amp; export</span>
+            </li>
+          </ul>
 
-        <div id="dropZone" class="dropzone" tabindex="0" aria-label="Drag & drop your feed or browse">
-          <div class="dz-inner">
-            <div class="dz-ghost">Drag & drop your feed</div>
-            <button id="browseBtn" class="btn ghost" type="button">Browse files</button>
-            <div id="fileName" class="file-name">No file selected yet.</div>
+          <div class="controls">
+            <label class="label">Profile
+              <select class="profile-select">
+                <option value="general">General</option>
+                <option value="apparel">Apparel (US)</option>
+                <option value="local_inventory">Local Inventory (US)</option>
+              </select>
+            </label>
           </div>
-          <input id="fileInput" type="file" accept=".csv,.json" hidden />
-        </div>
 
-        <div class="actions">
+          <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Drag &amp; drop your feed or browse">
+            <input id="fileInput" type="file" accept=".csv,.json" aria-hidden="true" />
+            <div class="drop-content">
+              <div class="drop-icon">📁</div>
+              <div>
+                <p class="drop-title">Drag &amp; drop your feed</p>
+                <p class="drop-subtitle">JSON array or CSV with headers.</p>
+                <p id="fileName" class="selected-file">No file selected yet.</p>
+              </div>
+            </div>
+          </div>
+
           <details class="advanced">
             <summary>Advanced (delimiter / encoding)</summary>
-            <div class="advanced-body">
-              <label>Delimiter <input id="delimiter" placeholder="auto" /></label>
-              <label>Encoding <input id="encoding" placeholder="utf-8" /></label>
+            <div class="advanced-grid">
+              <label class="label">Delimiter
+                <input id="delimiter" placeholder="auto" />
+              </label>
+              <label class="label">Encoding
+                <input id="encoding" placeholder="utf-8" />
+              </label>
             </div>
           </details>
-          <div class="action-buttons">
-            <button id="runCsv" class="btn primary">Validate CSV</button>
-            <button id="runJson" class="btn">Validate JSON</button>
-            <a class="btn ghost" href="samples/gmc-valid.json" download>Download sample JSON</a>
-            <a class="btn ghost" href="samples/gmc-broken.csv" download>Sample CSV (issues)</a>
-            <a class="btn ghost" href="samples/gmc-valid-general.csv" download>Sample CSV</a>
-          </div>
-        </div>
 
-        <div class="results card">
-          <h3>Results</h3>
-          <div class="result-columns">
-            <div>
-              <h4>Errors</h4>
-              <div id="results-errors" class="issues"></div>
+          <div class="actions">
+            <div class="primary-actions">
+              <button id="runCsv" class="btn primary" type="button">Validate CSV</button>
+              <button id="runJson" class="btn secondary" type="button">Validate JSON</button>
             </div>
-            <div>
-              <h4>Warnings</h4>
-              <div id="results-warnings" class="issues"></div>
-            </div>
-            <div>
-              <h4>Opportunities</h4>
-              <div id="results-opps" class="issues"></div>
+            <div class="secondary-actions">
+              <a class="btn ghost" href="samples/gmc-valid.json" download>Download sample JSON</a>
+              <a class="btn ghost" href="samples/gmc-broken.csv" download>Sample CSV (issues)</a>
+              <a class="btn ghost" href="samples/gmc-valid-general.csv" download>Sample CSV</a>
             </div>
           </div>
+
+          <section id="resultsCard" class="results hidden">
+            <header class="results-header">
+              <div class="results-title">
+                <h3 id="resultsHeading">Validation complete.</h3>
+                <p id="resultsSummary" class="results-summary muted">Review the rows grouped by severity. Export or resolve the most critical issues first.</p>
+              </div>
+              <div class="results-actions">
+                <button id="downloadJson" class="btn ghost small" type="button" disabled>Download JSON</button>
+                <button id="downloadCsv" class="btn ghost small" type="button" disabled>Download CSV</button>
+              </div>
+            </header>
+
+            <div class="results-toolbar">
+              <div class="filter-chips" role="tablist">
+                <button class="chip active" data-filter="all" role="tab" aria-selected="true">All <span id="filterAllCount" class="chip-count">0</span></button>
+                <button class="chip" data-filter="errors" role="tab" aria-selected="false">Errors <span id="filterErrorsCount" class="chip-count">0</span></button>
+                <button class="chip" data-filter="warnings" role="tab" aria-selected="false">Warnings <span id="filterWarningsCount" class="chip-count">0</span></button>
+                <button class="chip" data-filter="opportunities" role="tab" aria-selected="false">Opportunities <span id="filterOppsCount" class="chip-count">0</span></button>
+              </div>
+              <div class="table-meta">
+                <span id="visibleCount" class="muted">0 items shown</span>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="issues-table" aria-live="polite">
+                <thead>
+                  <tr>
+                    <th scope="col">Row</th>
+                    <th scope="col">Item ID</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Field</th>
+                    <th scope="col">Severity</th>
+                    <th scope="col">Message</th>
+                    <th scope="col">Value</th>
+                  </tr>
+                </thead>
+                <tbody id="resultsTableBody"></tbody>
+              </table>
+              <div id="resultsEmptyState" class="empty-state hidden">No issues for this filter. 🎉</div>
+            </div>
+          </section>
         </div>
-      </div>
 
-      <div class="panel panel-spec" data-panel="spec" hidden>
-        <div class="spec-grid">
-          <article class="spec-card">
-            <h4>Basic product data <span class="req">Required</span></h4>
-            <p><code>id</code>, <code>title</code>, <code>description</code>, <code>link</code>, <code>image_link</code>, <code>availability</code>, <code>price</code></p>
-            <ul>
-              <li>title ≤ 150, description ≤ 5000</li>
-              <li>availability ∈ in_stock / out_of_stock / preorder / backorder</li>
-              <li>price format: <code>15.00 USD</code></li>
-            </ul>
-          </article>
+        <div class="panel panel-spec" data-panel="spec" hidden>
+          <p class="muted">Understand the fields enforced by validation. Each card outlines the minimum data to ship, conditional rules we check, and helpful extras to boost your product coverage.</p>
+          <div class="spec-grid">
+            <article class="spec-card">
+              <header class="spec-card-header">
+                <h4 class="field-name">Core product data</h4>
+                <span class="badge required">Required</span>
+              </header>
+              <p class="field-desc">Everything every feed must include for surfacing in Shopping results.</p>
+              <ul class="checklist">
+                <li>
+                  <span class="check-icon" aria-hidden="true">✔</span>
+                  <div>
+                    <p class="check-title">Baseline attributes</p>
+                    <p class="check-desc"><code>id</code>, <code>title</code>, <code>description</code>, <code>link</code>, <code>image_link</code>, <code>availability</code>, <code>price</code></p>
+                  </div>
+                </li>
+                <li>
+                  <span class="check-icon" aria-hidden="true">✔</span>
+                  <div>
+                    <p class="check-title">Formatting guardrails</p>
+                    <p class="check-desc">Title ≤ 150 chars, description ≤ 5000 chars. Price formatted as <code>number currency</code> (e.g. <code>15.00 USD</code>).</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="check-icon" aria-hidden="true">★</span>
+                  <div>
+                    <p class="check-title">Boost quality</p>
+                    <p class="check-desc">HTTPS product pages, images ≥ 500px, and landing pages that mirror the offer details.</p>
+                  </div>
+                </li>
+              </ul>
+            </article>
 
-          <article class="spec-card">
-            <h4>Identifiers</h4>
-            <p>If <code>identifier_exists</code> ≠ <code>no</code>, submit <code>gtin</code> or (<code>brand</code> + <code>mpn</code>). GTIN must pass GS1 checksum.</p>
-          </article>
+            <article class="spec-card">
+              <header class="spec-card-header">
+                <h4 class="field-name">Identifiers</h4>
+                <span class="badge conditional">Conditional</span>
+              </header>
+              <p class="field-desc">Controls catalog matching and deduplication.</p>
+              <ul class="checklist">
+                <li>
+                  <span class="check-icon" aria-hidden="true">✔</span>
+                  <div>
+                    <p class="check-title">Submit identifiers unless exempt</p>
+                    <p class="check-desc"><code>identifier_exists</code> must be <code>no</code> to skip IDs; otherwise include GTIN or brand + MPN.</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="check-icon" aria-hidden="true">#</span>
+                  <div>
+                    <p class="check-title">GTIN specifics</p>
+                    <p class="check-desc">Provide 8/12/13/14 digits that pass GS1 checksum. Strip spaces and dashes before upload.</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="check-icon" aria-hidden="true">★</span>
+                  <div>
+                    <p class="check-title">Brand hygiene</p>
+                    <p class="check-desc">Match the branding on-site exactly (case-sensitive) and align MPNs with manufacturer references.</p>
+                  </div>
+                </li>
+              </ul>
+            </article>
 
-          <article class="spec-card">
-            <h4>Apparel (US) <span class="req">Profile</span></h4>
-            <p><code>item_group_id</code>, <code>color</code>, <code>gender</code>, <code>age_group</code>, <code>size</code>. Variants must differ by color/size/material/pattern/age_group/gender.</p>
-          </article>
+            <article class="spec-card">
+              <header class="spec-card-header">
+                <h4 class="field-name">Apparel (US)</h4>
+                <span class="badge required">Profile</span>
+              </header>
+              <p class="field-desc">Variant coverage for clothing, shoes, and accessories.</p>
+              <ul class="checklist">
+                <li>
+                  <span class="check-icon" aria-hidden="true">✔</span>
+                  <div>
+                    <p class="check-title">Variant attributes</p>
+                    <p class="check-desc"><code>item_group_id</code>, <code>color</code>, <code>gender</code>, <code>age_group</code>, <code>size</code> for every SKU.</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="check-icon" aria-hidden="true">⇄</span>
+                  <div>
+                    <p class="check-title">Differentiation</p>
+                    <p class="check-desc">Ensure variants change by size, color, material, pattern, age group, or gender &mdash; duplicates get flagged.</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="check-icon" aria-hidden="true">★</span>
+                  <div>
+                    <p class="check-title">Rich detail</p>
+                    <p class="check-desc">Add <code>size_type</code>, <code>size_system</code>, <code>material</code>, <code>pattern</code> to improve discovery.</p>
+                  </div>
+                </li>
+              </ul>
+            </article>
 
-          <article class="spec-card">
-            <h4>Local Inventory (US) <span class="req">Profile</span></h4>
-            <p><code>id</code>, <code>store_code</code>, <code>price</code>, <code>availability</code>. Recommended: <code>quantity</code>, <code>pickup_method</code>, <code>pickup_sla</code>.</p>
-          </article>
+            <article class="spec-card">
+              <header class="spec-card-header">
+                <h4 class="field-name">Local inventory (US)</h4>
+                <span class="badge recommended">Profile</span>
+              </header>
+              <p class="field-desc">Sync store availability for omnichannel shoppers.</p>
+              <ul class="checklist">
+                <li>
+                  <span class="check-icon" aria-hidden="true">✔</span>
+                  <div>
+                    <p class="check-title">Always include</p>
+                    <p class="check-desc"><code>id</code>, <code>store_code</code>, <code>price</code>, <code>availability</code>.</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="check-icon" aria-hidden="true">⏱</span>
+                  <div>
+                    <p class="check-title">Realtime insight</p>
+                    <p class="check-desc">Send <code>quantity</code>, <code>pickup_method</code>, <code>pickup_sla</code> so ads reflect fulfillment speed.</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="check-icon" aria-hidden="true">★</span>
+                  <div>
+                    <p class="check-title">Policy readiness</p>
+                    <p class="check-desc">Verify each store in Google Business Profile and keep currencies consistent (<code>USD</code> for US feeds).</p>
+                  </div>
+                </li>
+              </ul>
+            </article>
+          </div>
         </div>
       </div>
     </section>
