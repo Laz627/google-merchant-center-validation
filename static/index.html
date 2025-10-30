@@ -101,271 +101,58 @@
           </div>
 
           <section id="resultsCard" class="results hidden">
-            <header class="results-header">
-              <div class="results-title">
-                <h3 id="resultsHeading">Validation complete.</h3>
-                <p id="resultsSummary" class="results-summary muted">Review the rows grouped by severity. Export or resolve the most critical issues first.</p>
-              </div>
-              <div class="results-actions">
-                <button id="downloadJson" class="btn ghost small" type="button" disabled>Download JSON</button>
-                <button id="downloadCsv" class="btn ghost small" type="button" disabled>Download CSV</button>
-              </div>
-            </header>
-
-            <div class="results-toolbar">
-              <div class="filter-chips" role="tablist">
-                <button class="chip active" data-filter="all" role="tab" aria-selected="true">All <span id="filterAllCount" class="chip-count">0</span></button>
-                <button class="chip" data-filter="errors" role="tab" aria-selected="false">Errors <span id="filterErrorsCount" class="chip-count">0</span></button>
-                <button class="chip" data-filter="warnings" role="tab" aria-selected="false">Warnings <span id="filterWarningsCount" class="chip-count">0</span></button>
-                <button class="chip" data-filter="opportunities" role="tab" aria-selected="false">Opportunities <span id="filterOppsCount" class="chip-count">0</span></button>
-              </div>
-              <div class="table-meta">
-                <span id="visibleCount" class="muted">0 items shown</span>
-              </div>
+            <div class="results-header">
+              <h3>Results</h3>
             </div>
-
-            <div class="table-wrap">
-              <table class="issues-table" aria-live="polite">
-                <thead>
-                  <tr>
-                    <th scope="col">Row</th>
-                    <th scope="col">Item ID</th>
-                    <th scope="col">Title</th>
-                    <th scope="col">Field</th>
-                    <th scope="col">Severity</th>
-                    <th scope="col">Message</th>
-                    <th scope="col">Value</th>
-                  </tr>
-                </thead>
-                <tbody id="resultsTableBody"></tbody>
-              </table>
-              <div id="resultsEmptyState" class="empty-state hidden">No issues for this filter. 🎉</div>
+            <div class="result-columns">
+              <div>
+                <h4>Errors</h4>
+                <div id="results-errors" class="issues"></div>
+              </div>
+              <div>
+                <h4>Warnings</h4>
+                <div id="results-warnings" class="issues"></div>
+              </div>
+              <div>
+                <h4>Opportunities</h4>
+                <div id="results-opps" class="issues"></div>
+              </div>
             </div>
           </section>
         </div>
 
-
         <div class="panel panel-spec" data-panel="spec" hidden>
-          <p class="muted">Compare what validation checks before you upload. Each card mirrors the spec callouts from the reference mock so you know what data to gather and where mistakes usually surface.</p>
+          <p class="muted">Understand the fields. Each card highlights whether the field is required, recommended, or conditional and any dependencies that are checked during validation.</p>
           <div class="spec-grid">
             <article class="spec-card">
-              <div class="spec-card-top">
-                <div class="spec-icon" aria-hidden="true">🧱</div>
-                <div class="spec-heading">
-                  <p class="spec-eyebrow">Core feed</p>
-                  <h4>Essential product data</h4>
-                </div>
-                <span class="spec-pill required">Required</span>
-              </div>
-              <p class="spec-summary">Every item must cover the baseline attributes before we even evaluate merchandising rules.</p>
-              <div class="spec-section">
-                <h5>Must include</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">✔</span>
-                    <div>
-                      <p class="spec-item-title">Baseline fields</p>
-                      <p class="spec-item-copy"><code>id</code>, <code>title</code>, <code>description</code>, <code>link</code>, <code>image_link</code>, <code>availability</code>, <code>price</code></p>
-                    </div>
-                  </li>
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">✔</span>
-                    <div>
-                      <p class="spec-item-title">URL hygiene</p>
-                      <p class="spec-item-copy">All landing and image links must use <code>http://</code> or <code>https://</code>. Up to 10 additional images allowed.</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div class="spec-section highlight">
-                <h5>Validation watchouts</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">!</span>
-                    <div>
-                      <p class="spec-item-title">Length rules</p>
-                      <p class="spec-item-copy">Title ≤ 150 characters, description ≤ 5000 characters.</p>
-                    </div>
-                  </li>
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">!</span>
-                    <div>
-                      <p class="spec-item-title">Price formatting</p>
-                      <p class="spec-item-copy">Use <code>amount currency</code> format (e.g. <code>15.00 USD</code>). Sale price effective date should be ISO date ranges.</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div class="spec-section optional">
-                <h5>Level up</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">★</span>
-                    <div>
-                      <p class="spec-item-title">Quality signals</p>
-                      <p class="spec-item-copy">HTTPS product pages, imagery ≥ 500px, and landing content that matches the feed.</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
+              <span class="badge required">Required</span>
+              <h4 class="field-name">Basic product data</h4>
+              <p class="field-desc"><code>id</code>, <code>title</code>, <code>description</code>, <code>link</code>, <code>image_link</code>, <code>availability</code>, <code>price</code></p>
+              <ul class="dependencies">
+                <li>Title ≤ 150, description ≤ 5000</li>
+                <li>Availability ∈ in_stock / out_of_stock / preorder / backorder</li>
+                <li>Price format: <code>15.00 USD</code></li>
+              </ul>
             </article>
 
             <article class="spec-card">
-              <div class="spec-card-top">
-                <div class="spec-icon" aria-hidden="true">🔗</div>
-                <div class="spec-heading">
-                  <p class="spec-eyebrow">Match accuracy</p>
-                  <h4>Identifiers &amp; uniqueness</h4>
-                </div>
-                <span class="spec-pill conditional">Conditional</span>
-              </div>
-              <p class="spec-summary">Controls catalog deduping, dynamic remarketing, and price comparison experiences.</p>
-              <div class="spec-section">
-                <h5>When required</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">✔</span>
-                    <div>
-                      <p class="spec-item-title">Identifier toggle</p>
-                      <p class="spec-item-copy"><code>identifier_exists</code> must be <code>no</code> to opt out. Otherwise submit <code>gtin</code> or <code>brand</code> + <code>mpn</code>.</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div class="spec-section highlight">
-                <h5>Validation watchouts</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">!</span>
-                    <div>
-                      <p class="spec-item-title">GTIN specifics</p>
-                      <p class="spec-item-copy">Provide 8 / 12 / 13 / 14 digits that pass GS1 checksum. Remove spaces and hyphens before upload.</p>
-                    </div>
-                  </li>
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">!</span>
-                    <div>
-                      <p class="spec-item-title">Brand + MPN pairing</p>
-                      <p class="spec-item-copy">If GTIN is absent, both <code>brand</code> and <code>mpn</code> must be present.</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div class="spec-section optional">
-                <h5>Good to know</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">★</span>
-                    <div>
-                      <p class="spec-item-title">Consistent naming</p>
-                      <p class="spec-item-copy">Match brand spelling with what appears on the PDP and keep MPNs stable between feed refreshes.</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
+              <span class="badge conditional">Conditional</span>
+              <h4 class="field-name">Identifiers</h4>
+              <p class="field-desc">If <code>identifier_exists</code> ≠ <code>no</code>, submit <code>gtin</code> or (<code>brand</code> + <code>mpn</code>). GTIN must pass GS1 checksum.</p>
             </article>
 
             <article class="spec-card">
-              <div class="spec-card-top">
-                <div class="spec-icon" aria-hidden="true">🧵</div>
-                <div class="spec-heading">
-                  <p class="spec-eyebrow">Profile</p>
-                  <h4>Apparel variants (US)</h4>
-                </div>
-                <span class="spec-pill">Profile</span>
-              </div>
-              <p class="spec-summary">Required for clothing &amp; accessories so variants merchandise as a single product family.</p>
-              <div class="spec-section">
-                <h5>Must include</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">✔</span>
-                    <div>
-                      <p class="spec-item-title">Variant keys</p>
-                      <p class="spec-item-copy"><code>item_group_id</code>, <code>color</code>, <code>gender</code>, <code>age_group</code>, <code>size</code></p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div class="spec-section highlight">
-                <h5>Validation watchouts</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">!</span>
-                    <div>
-                      <p class="spec-item-title">Differentiation</p>
-                      <p class="spec-item-copy">Variants must differ by at least one of: color, size, pattern, material, age_group, gender.</p>
-                    </div>
-                  </li>
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">!</span>
-                    <div>
-                      <p class="spec-item-title">Accurate sizing</p>
-                      <p class="spec-item-copy">Include <code>size_system</code> and <code>size_type</code> for multi-region feeds.</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div class="spec-section optional">
-                <h5>Level up</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">★</span>
-                    <div>
-                      <p class="spec-item-title">Rich imagery</p>
-                      <p class="spec-item-copy">Include lifestyle, detail, and back-of-product shots to improve conversion quality.</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
+              <span class="badge required">Profile</span>
+              <h4 class="field-name">Apparel (US)</h4>
+              <p class="field-desc"><code>item_group_id</code>, <code>color</code>, <code>gender</code>, <code>age_group</code>, <code>size</code>.</p>
+              <p class="dependencies">Variants must differ by color / size / material / pattern / age_group / gender.</p>
             </article>
 
             <article class="spec-card">
-              <div class="spec-card-top">
-                <div class="spec-icon" aria-hidden="true">📍</div>
-                <div class="spec-heading">
-                  <p class="spec-eyebrow">Store sync</p>
-                  <h4>Local inventory (US)</h4>
-                </div>
-                <span class="spec-pill">Profile</span>
-              </div>
-              <p class="spec-summary">Pair online feeds with store-level availability for omnichannel programs.</p>
-              <div class="spec-section">
-                <h5>Must include</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">✔</span>
-                    <div>
-                      <p class="spec-item-title">Core attributes</p>
-                      <p class="spec-item-copy"><code>id</code>, <code>store_code</code>, <code>price</code>, <code>availability</code></p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div class="spec-section highlight">
-                <h5>Validation watchouts</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">!</span>
-                    <div>
-                      <p class="spec-item-title">Inventory freshness</p>
-                      <p class="spec-item-copy">Refresh quantity, <code>pickup_method</code>, and <code>pickup_sla</code> so in-store promises stay accurate.</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div class="spec-section optional">
-                <h5>Level up</h5>
-                <ul class="spec-list">
-                  <li>
-                    <span class="spec-bullet" aria-hidden="true">★</span>
-                    <div>
-                      <p class="spec-item-title">Policy readiness</p>
-                      <p class="spec-item-copy">Verify every location in Google Business Profile and keep a single currency per feed (<code>USD</code> for US).</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
+              <span class="badge recommended">Profile</span>
+              <h4 class="field-name">Local inventory (US)</h4>
+              <p class="field-desc"><code>id</code>, <code>store_code</code>, <code>price</code>, <code>availability</code>.</p>
+              <p class="dependencies">Recommended: <code>quantity</code>, <code>pickup_method</code>, <code>pickup_sla</code>.</p>
             </article>
           </div>
         </div>

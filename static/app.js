@@ -27,22 +27,9 @@
   const delimiterInput = $("#delimiter");
   const encodingInput = $("#encoding");
 
-  let lastSelectedFile = null;
-
-  function currentFile(){
-    return fileInput?.files?.[0] || lastSelectedFile;
-  }
-
-  function updateSelectedFile(file){
-    if(file){
-      lastSelectedFile = file;
-    }else{
-      lastSelectedFile = fileInput?.files?.[0] || lastSelectedFile;
-    }
-    const name = currentFile()?.name;
-    if(fileName){
-      fileName.textContent = name || "No file selected yet.";
-    }
+  function updateSelectedFile(){
+    const name = fileInput?.files?.[0]?.name;
+    fileName.textContent = name || "No file selected yet.";
     markStep(name ? 2 : 1);
   }
 
@@ -53,7 +40,7 @@
       fileInput?.click();
     }
   });
-  fileInput?.addEventListener("change", () => updateSelectedFile(fileInput.files?.[0]));
+  fileInput?.addEventListener("change", updateSelectedFile);
 
   ["dragenter","dragover"].forEach(evt => dz?.addEventListener(evt, e => {
     e.preventDefault(); e.stopPropagation(); dz.classList.add("dragging");
@@ -62,93 +49,42 @@
     e.preventDefault(); e.stopPropagation(); dz.classList.remove("dragging");
   }));
   dz?.addEventListener("drop", e => {
-    const files = e.dataTransfer?.files;
-    if(files?.length){
-      const primary = files[0];
-      if(fileInput && typeof DataTransfer !== "undefined"){
-        try{
-          const dt = new DataTransfer();
-          Array.from(files).forEach(file => dt.items.add(file));
-          fileInput.files = dt.files;
-        }catch(_){/* ignore inability to mirror files */}
-      }
-      updateSelectedFile(primary);
+    const f = e.dataTransfer.files?.[0];
+    if(f){
+      fileInput.files = e.dataTransfer.files;
+      updateSelectedFile();
     }
   });
 
   // Results
-  const resultsSummary = $("#resultsSummary");
-  const resultsHeading = $("#resultsHeading");
+  const resultsErrors = $("#results-errors");
+  const resultsWarnings = $("#results-warnings");
+  const resultsOpps = $("#results-opps");
   const resultsCard = $("#resultsCard");
-  const resultsTableBody = $("#resultsTableBody");
-  const resultsEmptyState = $("#resultsEmptyState");
-  const visibleCount = $("#visibleCount");
-  const filterButtons = $$(".results-toolbar .chip");
-  const filterCounts = {
-    all: $("#filterAllCount"),
-    errors: $("#filterErrorsCount"),
-    warnings: $("#filterWarningsCount"),
-    opportunities: $("#filterOppsCount")
-  };
-  const downloadJsonBtn = $("#downloadJson");
-  const downloadCsvBtn = $("#downloadCsv");
 
-  const severityLookup = {
-    errors: "Error",
-    warnings: "Warning",
-    opportunities: "Opportunity"
-  };
-
-  let latestBuckets = {errors: [], warnings: [], opportunities: []};
-  let latestIssues = [];
-  let activeFilter = "all";
-
-  function updateFilters(){
-    const counts = {
-      errors: latestBuckets.errors.length,
-      warnings: latestBuckets.warnings.length,
-      opportunities: latestBuckets.opportunities.length
-    };
-    const total = counts.errors + counts.warnings + counts.opportunities;
-    if(filterCounts.all) filterCounts.all.textContent = total;
-    if(filterCounts.errors) filterCounts.errors.textContent = counts.errors;
-    if(filterCounts.warnings) filterCounts.warnings.textContent = counts.warnings;
-    if(filterCounts.opportunities) filterCounts.opportunities.textContent = counts.opportunities;
-    if(downloadJsonBtn) downloadJsonBtn.disabled = total === 0;
-    if(downloadCsvBtn) downloadCsvBtn.disabled = total === 0;
-    if(visibleCount){
-      visibleCount.textContent = `${getFilteredIssues(activeFilter).length} items shown`;
+  function renderIssues(container, issues, countEl){
+    const list = issues || [];
+    if(countEl){
+      countEl.textContent = String(list.length);
     }
-  }
-
-  function getFilteredIssues(filter){
-    if(filter === "all") return latestIssues;
-    const severity = severityLookup[filter];
-    return latestIssues.filter(issue => issue.severity === severity);
-  }
-
-  function renderTable(filter="all"){
-    activeFilter = filter;
-    const filtered = getFilteredIssues(filter);
-    if(resultsTableBody){
-      resultsTableBody.innerHTML = "";
-      for(const issue of filtered){
-        const tr = document.createElement("tr");
-        const severityClass = (issue.severity || "").toLowerCase();
-        tr.innerHTML = `
-          <td>${escapeHtml(issue.row ?? "-")}</td>
-          <td>${escapeHtml(issue.item_id || "")}</td>
-          <td>${escapeHtml(issue.item_title || "")}</td>
-          <td>${escapeHtml(issue.field || "")}</td>
-          <td><span class="severity-badge ${escapeHtml(severityClass)}">${escapeHtml(issue.severity || "")}</span></td>
-          <td class="message">${escapeHtml(issue.message || "")}</td>
-          <td class="value">${escapeHtml(issue.value === undefined || issue.value === null ? "" : String(issue.value))}</td>
-        `;
-        resultsTableBody.appendChild(tr);
-      }
+    container.innerHTML = "";
+    if(!list.length){
+      container.innerHTML = '<div class="empty">None 🎉</div>';
+      return;
     }
-    if(resultsEmptyState){
-      resultsEmptyState.classList.toggle("hidden", filtered.length > 0);
+    for(const it of list){
+      const row = document.createElement("article");
+      row.className = "issue-row";
+      const field = escapeHtml(it.field || "");
+      const message = escapeHtml(it.message || "");
+      row.innerHTML = `
+        <header class="issue-header">
+          <span class="issue-pill">Row ${it.row ?? "-"}</span>
+          ${field ? `<code class="issue-field">${field}</code>` : ""}
+        </header>
+        <p class="issue-message">${message}</p>
+      `;
+      container.appendChild(row);
     }
     if(visibleCount){
       visibleCount.textContent = `${filtered.length} items shown`;
@@ -225,34 +161,9 @@
       const res = await fetch(endpoint, {method:"POST", body: fd});
       if(!res.ok) throw new Error(await res.text() || "Validation failed");
       const data = await res.json();
-      latestBuckets = {
-        errors: data.errors || [],
-        warnings: data.warnings || [],
-        opportunities: data.opportunities || []
-      };
-      latestIssues = [
-        ...latestBuckets.errors,
-        ...latestBuckets.warnings,
-        ...latestBuckets.opportunities
-      ];
-      updateFilters();
-      renderTable(activeFilter);
-      if(resultsSummary){
-        const err = latestBuckets.errors.length;
-        const warn = latestBuckets.warnings.length;
-        const opp = latestBuckets.opportunities.length;
-        const parts = [
-          err ? `${err} ${err===1?"error":"errors"}` : null,
-          warn ? `${warn} ${warn===1?"warning":"warnings"}` : null,
-          opp ? `${opp} ${opp===1?"opportunity":"opportunities"}` : null
-        ].filter(Boolean);
-        resultsSummary.textContent = parts.length
-          ? `Found ${parts.join(", ")}. Prioritize errors, then warnings.`
-          : "No blocking issues found. Review opportunities to improve feed quality.";
-      }
-      if(resultsHeading){
-        resultsHeading.textContent = latestIssues.length ? "Validation complete." : "No issues detected.";
-      }
+      renderIssues(resultsErrors, data.errors);
+      renderIssues(resultsWarnings, data.warnings);
+      renderIssues(resultsOpps, data.opportunities);
       markStep(3);
       resultsCard?.classList.remove("hidden");
     }catch(e){
