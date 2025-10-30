@@ -1,42 +1,61 @@
-
-// =======================
-// static/app.js (GMC)
-// =======================
 (function(){
   const $ = (q, ctx=document) => ctx.querySelector(q);
   const $$ = (q, ctx=document) => Array.from(ctx.querySelectorAll(q));
 
-  const profileSelects = $$(".profile-select");
-  const csvForm = $("#csvForm");
-  const jsonForm = $("#jsonForm");
-  const csvInput = $("#csvFile");
-  const jsonInput = $("#jsonFile");
+  // Tabs
+  const toggles = $$(".toggle");
+  const panels = $$(".panel");
+  toggles.forEach(btn => {
+    btn.addEventListener("click", () => {
+      toggles.forEach(b => b.classList.toggle("active", b===btn));
+      panels.forEach(p => p.hidden = p.getAttribute("data-panel") !== btn.dataset.tab);
+    });
+  });
 
+  // Profile
+  const profileSelect = $(".profile-select");
+  function profile(){ return profileSelect?.value || "general"; }
+
+  // Drag & drop
+  const dz = $("#dropZone");
+  const fileInput = $("#fileInput");
+  const browseBtn = $("#browseBtn");
+  const fileName = $("#fileName");
+
+  browseBtn?.addEventListener("click", ()=> fileInput.click());
+  fileInput?.addEventListener("change", ()=> {
+    fileName.textContent = fileInput.files[0] ? fileInput.files[0].name : "No file selected yet.";
+  });
+
+  ["dragenter","dragover"].forEach(evt => dz?.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation(); dz.classList.add("hover");
+  }));
+  ["dragleave","drop"].forEach(evt => dz?.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation(); dz.classList.remove("hover");
+  }));
+  dz?.addEventListener("drop", e => {
+    const f = e.dataTransfer.files?.[0];
+    if(f){ fileInput.files = e.dataTransfer.files; fileName.textContent = f.name; }
+  });
+
+  // Results
   const resultsErrors = $("#results-errors");
   const resultsWarnings = $("#results-warnings");
   const resultsOpps = $("#results-opps");
 
-  function currentProfile(){
-    // both forms share the same profile select value
-    return profileSelects[0]?.value || "general";
-  }
-
   function renderIssues(container, issues){
     container.innerHTML = "";
     if(!issues || !issues.length){
-      const el = document.createElement("div");
-      el.className = "empty";
-      el.textContent = "None 🎉";
-      container.appendChild(el);
+      container.innerHTML = '<div class="empty">None 🎉</div>';
       return;
     }
     for(const it of issues){
       const row = document.createElement("div");
       row.className = "issue-row";
       row.innerHTML = `
-        <div class="col col-row">Row ${it.row ?? "-"}</div>
-        <div class="col col-field"><code>${(it.field||"")}</code></div>
-        <div class="col col-msg">${escapeHtml(it.message||"")}</div>
+        <div class="badge">Row ${it.row ?? "-"}</div>
+        <div class="field"><code>${escapeHtml(it.field||"")}</code></div>
+        <div class="msg">${escapeHtml(it.message||"")}</div>
       `;
       container.appendChild(row);
     }
@@ -46,24 +65,22 @@
     return (str||"").replace(/[&<>"']/g, s=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[s]));
   }
 
-  async function handleSubmit(form, endpoint, fileInput){
-    const file = fileInput.files[0];
-    if(!file){ alert("Please choose a file first."); return; }
+  async function validate(kind){
+    const f = fileInput.files?.[0];
+    if(!f){ alert("Choose a file first."); return; }
     const fd = new FormData();
-    fd.append("file", file);
-    fd.append("profile", currentProfile());
-
+    fd.append("file", f);
+    fd.append("profile", profile());
+    const endpoint = kind === "csv" ? "/api/validate-csv" : "/api/validate-json";
     setLoading(true);
     try{
-      const res = await fetch(endpoint, { method: "POST", body: fd });
-      if(!res.ok){
-        const msg = await res.text();
-        throw new Error(msg || "Validation failed");
-      }
+      const res = await fetch(endpoint, {method:"POST", body: fd});
+      if(!res.ok) throw new Error(await res.text() || "Validation failed");
       const data = await res.json();
       renderIssues(resultsErrors, data.errors);
       renderIssues(resultsWarnings, data.warnings);
       renderIssues(resultsOpps, data.opportunities);
+      markStep(2);
     }catch(e){
       alert(e.message || String(e));
     }finally{
@@ -72,26 +89,15 @@
   }
 
   function setLoading(is){
-    const btns = $$("button[type=submit]");
-    btns.forEach(b => b.disabled = is);
     document.body.classList.toggle("loading", is);
   }
 
-  csvForm?.addEventListener("submit", (e)=>{
-    e.preventDefault();
-    handleSubmit(csvForm, "/api/validate-csv", csvInput);
-  });
-  jsonForm?.addEventListener("submit", (e)=>{
-    e.preventDefault();
-    handleSubmit(jsonForm, "/api/validate-json", jsonInput);
-  });
+  // Stepper visuals
+  const stepEls = $$(".steps .step");
+  function markStep(n){ // 1..3
+    stepEls.forEach((s, i) => s.classList.toggle("active", i < n));
+  }
 
-  // Spec accordion
-  $$(".spec-toggle").forEach(t => {
-    t.addEventListener("click", ()=>{
-      const target = t.getAttribute("data-target");
-      const el = $(target);
-      if(el) el.classList.toggle("open");
-    });
-  });
+  $("#runCsv")?.addEventListener("click", ()=> validate("csv"));
+  $("#runJson")?.addEventListener("click", ()=> validate("json"));
 })();
