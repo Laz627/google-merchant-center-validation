@@ -1,0 +1,4 @@
+id,title,description,link,image_link,availability,price,item_group_id,color,gender,age_group,size,brand,gtin
+SHOE-RED-8,Stride Runner,Lightweight road shoe,http://example.com/p/shoe,http://example.com/img/shoe-red-8.jpg,in_stock,79.99 USD,SHOE-GRP,Red,unisex,adult,8,Stride,00812345678904
+SHOE-RED-9,Stride Runner,Lightweight road shoe,http://example.com/p/shoe,http://example.com/img/shoe-red-9.jpg,in_stock,79.99 USD,SHOE-GRP,Red,unisex,adult,9,Stride,00812345678911
+SHOE-BLK-8,Stride Runner,Lightweight road shoe,http://example.com/p/shoe,http://example.com/img/shoe-blk-8.jpg,in_stock,79.99 USD,SHOE-GRP,Black,unisex,adult,8,Stride,00812345678928
