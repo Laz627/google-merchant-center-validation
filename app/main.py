@@ -23,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-STATIC_DIR = Path(__file__).parent.parent / "static"
+STATIC_DIR = Path(__file__).parent / "static"
 SPEC_FILE = STATIC_DIR / "spec" / "gmc_spec_us_en.json"
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
