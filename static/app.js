@@ -5,12 +5,16 @@
   // Tabs
   const toggles = $$(".toggle");
   const panels = $$(".panel");
-  toggles.forEach(btn => {
-    btn.addEventListener("click", () => {
-      toggles.forEach(b => b.classList.toggle("active", b===btn));
-      panels.forEach(p => p.hidden = p.getAttribute("data-panel") !== btn.dataset.tab);
+  function showTab(tab){
+    toggles.forEach(b => b.classList.toggle("active", b.dataset.tab===tab));
+    panels.forEach(p => {
+      const on = p.getAttribute("data-panel") === tab;
+      p.hidden = !on;
+      p.classList.toggle("active", on);
     });
-  });
+  }
+  toggles.forEach(btn => btn.addEventListener("click", () => showTab(btn.dataset.tab)));
+  showTab("validate");
 
   // Profile
   const profileSelect = $(".profile-select");
