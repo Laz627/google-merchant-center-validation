@@ -255,6 +255,34 @@ def evaluate_items(items: List[Dict[str,Any]], profile: str) -> Dict[str, Any]:
     if profile in (PROFILE_APPAREL, PROFILE_GENERAL):
         validate_variants(items, issues)
 
+    # Attach source metadata for richer UI context
+    for issue in issues:
+        try:
+            src = items[issue["row"] - 2]
+        except Exception:
+            src = {}
+        if isinstance(src, dict):
+            item_id = src.get("id")
+            issue["item_id"] = (item_id.strip() if isinstance(item_id, str) else item_id) or ""
+            title = src.get("title")
+            issue["item_title"] = (title.strip() if isinstance(title, str) else title) or ""
+            field = issue.get("field") or ""
+            value = None
+            if field:
+                search_keys = [field]
+                if "/" in field:
+                    search_keys.extend(part.strip() for part in field.split("/") if part.strip())
+                for key in search_keys:
+                    if key in src:
+                        val = src.get(key)
+                        value = val.strip() if isinstance(val, str) else val
+                        break
+            issue["value"] = "" if value is None else value
+        else:
+            issue["item_id"] = ""
+            issue["item_title"] = ""
+            issue["value"] = ""
+
     # Severity bucketization
     errors = [i for i in issues if i["severity"] == ERR]
     warnings = [i for i in issues if i["severity"] == WARN]

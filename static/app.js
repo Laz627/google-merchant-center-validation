@@ -84,10 +84,59 @@
       `;
       container.appendChild(row);
     }
+    if(visibleCount){
+      visibleCount.textContent = `${filtered.length} items shown`;
+    }
+    filterButtons.forEach(btn => {
+      const isActive = btn.dataset.filter === filter;
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
   }
 
+  filterButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      renderTable(btn.dataset.filter || "all");
+    });
+  });
+
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  downloadJsonBtn?.addEventListener("click", () => {
+    if(!latestIssues.length) return;
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      profile: profile(),
+      issues: latestIssues
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
+    downloadBlob(blob, "gmc-validation-issues.json");
+  });
+
+  downloadCsvBtn?.addEventListener("click", () => {
+    if(!latestIssues.length) return;
+    const header = ["row","item_id","item_title","field","severity","message","value"];
+    const rows = latestIssues.map(issue => header.map(key => {
+      const val = issue[key] === undefined || issue[key] === null ? "" : String(issue[key]);
+      return `"${val.replace(/"/g,'""')}"`;
+    }).join(","));
+    const csv = [header.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], {type: "text/csv"});
+    downloadBlob(blob, "gmc-validation-issues.csv");
+  });
+
   function escapeHtml(str){
-    return (str||"").replace(/[&<>"']/g, s=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[s]));
+    const text = str == null ? "" : String(str);
+    return text.replace(/[&<>"']/g, s=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[s]));
   }
 
   async function validate(kind){
