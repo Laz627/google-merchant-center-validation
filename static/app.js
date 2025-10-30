@@ -3,14 +3,14 @@
   const $$ = (q, ctx=document) => Array.from(ctx.querySelectorAll(q));
 
   // Tabs
-  const toggles = $$(".toggle");
+  const toggles = $$(".tab");
   const panels = $$(".panel");
   function showTab(tab){
     toggles.forEach(b => b.classList.toggle("active", b.dataset.tab===tab));
     panels.forEach(p => {
       const on = p.getAttribute("data-panel") === tab;
       p.hidden = !on;
-      p.classList.toggle("active", on);
+      p.classList.toggle("visible", on);
     });
   }
   toggles.forEach(btn => btn.addEventListener("click", () => showTab(btn.dataset.tab)));
@@ -23,43 +23,68 @@
   // Drag & drop
   const dz = $("#dropZone");
   const fileInput = $("#fileInput");
-  const browseBtn = $("#browseBtn");
   const fileName = $("#fileName");
 
-  browseBtn?.addEventListener("click", ()=> fileInput.click());
-  fileInput?.addEventListener("change", ()=> {
-    fileName.textContent = fileInput.files[0] ? fileInput.files[0].name : "No file selected yet.";
+  function updateSelectedFile(){
+    const name = fileInput?.files?.[0]?.name;
+    fileName.textContent = name || "No file selected yet.";
+    markStep(name ? 2 : 1);
+  }
+
+  dz?.addEventListener("click", ()=> fileInput?.click());
+  dz?.addEventListener("keydown", e => {
+    if(e.key === "Enter" || e.key === " "){
+      e.preventDefault();
+      fileInput?.click();
+    }
   });
+  fileInput?.addEventListener("change", updateSelectedFile);
 
   ["dragenter","dragover"].forEach(evt => dz?.addEventListener(evt, e => {
-    e.preventDefault(); e.stopPropagation(); dz.classList.add("hover");
+    e.preventDefault(); e.stopPropagation(); dz.classList.add("dragging");
   }));
   ["dragleave","drop"].forEach(evt => dz?.addEventListener(evt, e => {
-    e.preventDefault(); e.stopPropagation(); dz.classList.remove("hover");
+    e.preventDefault(); e.stopPropagation(); dz.classList.remove("dragging");
   }));
   dz?.addEventListener("drop", e => {
     const f = e.dataTransfer.files?.[0];
-    if(f){ fileInput.files = e.dataTransfer.files; fileName.textContent = f.name; }
+    if(f){
+      fileInput.files = e.dataTransfer.files;
+      updateSelectedFile();
+    }
   });
 
   // Results
   const resultsErrors = $("#results-errors");
   const resultsWarnings = $("#results-warnings");
   const resultsOpps = $("#results-opps");
+  const resultsErrorsCount = $("#resultsErrorsCount");
+  const resultsWarningsCount = $("#resultsWarningsCount");
+  const resultsOppsCount = $("#resultsOppsCount");
+  const resultsSummary = $("#resultsSummary");
+  const resultsCard = $("#resultsCard");
 
-  function renderIssues(container, issues){
+  function renderIssues(container, issues, countEl){
+    const list = issues || [];
+    if(countEl){
+      countEl.textContent = String(list.length);
+    }
     container.innerHTML = "";
-    if(!issues || !issues.length){
+    if(!list.length){
       container.innerHTML = '<div class="empty">None 🎉</div>';
       return;
     }
-    for(const it of issues){
-      const row = document.createElement("div");
+    for(const it of list){
+      const row = document.createElement("article");
       row.className = "issue-row";
+      const field = escapeHtml(it.field || "");
+      const message = escapeHtml(it.message || "");
       row.innerHTML = `
-        <div class="badge">Row ${it.row ?? "-"}</div>
-        <div class="field"><code>${escapeHtml(it.field||"")}</code></div>
-        <div class="msg">${escapeHtml(it.message||"")}</div>
+        <header class="issue-header">
+          <span class="issue-pill">Row ${it.row ?? "-"}</span>
+          ${field ? `<code class="issue-field">${field}</code>` : ""}
+        </header>
+        <p class="issue-message">${message}</p>
       `;
       container.appendChild(row);
     }
@@ -76,15 +101,31 @@
     fd.append("file", f);
     fd.append("profile", profile());
     const endpoint = kind === "csv" ? "/api/validate-csv" : "/api/validate-json";
+    resultsCard?.classList.add("hidden");
+    markStep(2);
     setLoading(true);
     try{
       const res = await fetch(endpoint, {method:"POST", body: fd});
       if(!res.ok) throw new Error(await res.text() || "Validation failed");
       const data = await res.json();
-      renderIssues(resultsErrors, data.errors);
-      renderIssues(resultsWarnings, data.warnings);
-      renderIssues(resultsOpps, data.opportunities);
-      markStep(2);
+      renderIssues(resultsErrors, data.errors, resultsErrorsCount);
+      renderIssues(resultsWarnings, data.warnings, resultsWarningsCount);
+      renderIssues(resultsOpps, data.opportunities, resultsOppsCount);
+      if(resultsSummary){
+        const err = data.errors?.length || 0;
+        const warn = data.warnings?.length || 0;
+        const opp = data.opportunities?.length || 0;
+        const parts = [
+          err ? `${err} ${err===1?"error":"errors"}` : null,
+          warn ? `${warn} ${warn===1?"warning":"warnings"}` : null,
+          opp ? `${opp} ${opp===1?"opportunity":"opportunities"}` : null
+        ].filter(Boolean);
+        resultsSummary.textContent = parts.length
+          ? `Found ${parts.join(", ")}. Prioritize errors, then warnings.`
+          : "No blocking issues found. Review opportunities to improve feed quality.";
+      }
+      markStep(3);
+      resultsCard?.classList.remove("hidden");
     }catch(e){
       alert(e.message || String(e));
     }finally{
@@ -97,10 +138,14 @@
   }
 
   // Stepper visuals
-  const stepEls = $$(".steps .step");
+  const stepEls = $$(".flow-steps .step");
   function markStep(n){ // 1..3
-    stepEls.forEach((s, i) => s.classList.toggle("active", i < n));
+    stepEls.forEach((s, i) => {
+      s.classList.toggle("current", i === n - 1);
+      s.classList.toggle("complete", i < n - 1);
+    });
   }
+  markStep(1);
 
   $("#runCsv")?.addEventListener("click", ()=> validate("csv"));
   $("#runJson")?.addEventListener("click", ()=> validate("json"));
