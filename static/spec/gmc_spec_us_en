@@ -144,12 +144,44 @@
       "desc": "newborn/infant/toddler/kids/adult"
     },
     {
+      "name": "item_group_id",
+      "status": "profile",
+      "profiles": [
+        "apparel"
+      ],
+      "desc": "Group ID for variants"
+    },
+    {
       "name": "store_code",
       "status": "required",
       "profiles": [
         "local_inventory"
       ],
-      "desc": "Store code in store feed"
+      "desc": "Store code for local inventory"
+    },
+    {
+      "name": "quantity",
+      "status": "recommended",
+      "profiles": [
+        "local_inventory"
+      ],
+      "desc": "Store quantity on hand"
+    },
+    {
+      "name": "pickup_method",
+      "status": "recommended",
+      "profiles": [
+        "local_inventory"
+      ],
+      "desc": "pickup, ship_to_store"
+    },
+    {
+      "name": "pickup_sla",
+      "status": "recommended",
+      "profiles": [
+        "local_inventory"
+      ],
+      "desc": "same_day, next_day, 2-day"
     }
   ]
 }
