@@ -1,0 +1,3 @@
+id,store_code,price,availability,quantity,link,image_link
+SKU-1,STORE-001,29.99 USD,in_stock,12,http://example.com/p/sku1,http://example.com/img/sku1.jpg
+SKU-2,STORE-002,9.99 USD,out_of_stock,0,http://example.com/p/sku2,http://example.com/img/sku2.jpg
