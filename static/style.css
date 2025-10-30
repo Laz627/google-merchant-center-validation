@@ -247,3 +247,7 @@ body{background:#0a0b0e;color:var(--text);font-family:Inter,system-ui,Segoe UI,R
   .results .result-columns{grid-template-columns:1fr}
   .spec-grid{grid-template-columns:1fr}
 }
+
+/* Panel visibility fallback */
+.panel{display:none;}
+.panel.active{display:block;}
