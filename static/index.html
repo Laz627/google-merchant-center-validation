@@ -1,166 +1,87 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Google Merchant Center Product Feed Validator</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/static/style.css"/>
 </head>
 <body>
-  <header class="site-header">
-    <div class="brand">
-      <div class="logo">G</div>
-      <div class="titles">
-        <h1>Google Merchant Center Product Feed Validator</h1>
-        <p class="tagline">Validate JSON / CSV feeds against US/EN GMC spec. Exact headers. Checks formatting, enums, and rule dependencies.</p>
-      </div>
-    </div>
-    <nav class="top-links">
-      <a href="#spec">Spec</a>
-      <a href="https://support.google.com/merchants/answer/7052112" target="_blank" rel="noopener">GMC Docs</a>
-      <a href="https://www.linkedin.com/in/brandonlazovic/" target="_blank" rel="noopener">LinkedIn</a>
+  <header class="topbar">
+    <div class="brand">Google Merchant Center Product Feed Validator</div>
+    <nav class="menu">
+      <button class="toggle active" data-tab="validate">Validate</button>
+      <button class="toggle" data-tab="spec">Spec & Requirements</button>
+      <a class="nav" target="_blank" href="https://support.google.com/merchants/answer/7052112">GMC Docs ↗</a>
     </nav>
   </header>
 
   <main class="container">
-    <section class="intro">
-      <div class="info-card">
-        <ul class="meta-list">
-          <li>≤ 50 000 rows per run</li>
-          <li>JSON / CSV</li>
-          <li>Checks formatting, enums, &amp; dependencies</li>
-        </ul>
-        <h2>Validate your product feed</h2>
-        <p>Upload a JSON array or CSV with headers. We check required vs recommended fields and rule dependencies for the Google Merchant Center spec.</p>
-
-        <div class="tabs" role="tablist">
-          <button class="tab active" data-tab="validate" role="tab">Validate</button>
-          <button class="tab" data-tab="spec" role="tab">Spec &amp; Requirements</button>
-        </div>
-
-        <div class="panel panel-validate visible" data-panel="validate">
-          <ul class="flow-steps">
-            <li class="step current" data-step="1">
-              <span class="step-number">1</span>
-              <span class="step-label">Add file</span>
-            </li>
-            <li class="step" data-step="2">
-              <span class="step-number">2</span>
-              <span class="step-label">Validate</span>
-            </li>
-            <li class="step" data-step="3">
-              <span class="step-number">3</span>
-              <span class="step-label">Review &amp; export</span>
-            </li>
-          </ul>
-
-          <div class="controls">
-            <label class="label">Profile
-              <select class="profile-select">
-                <option value="general">General</option>
-                <option value="apparel">Apparel (US)</option>
-                <option value="local_inventory">Local Inventory (US)</option>
-              </select>
-            </label>
-          </div>
-
-          <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Drag &amp; drop your feed or browse">
-            <input id="fileInput" type="file" accept=".csv,.json" aria-hidden="true" />
-            <div class="drop-content">
-              <div class="drop-icon">📁</div>
-              <div>
-                <p class="drop-title">Drag &amp; drop your feed</p>
-                <p class="drop-subtitle">JSON array or CSV with headers.</p>
-                <p id="fileName" class="selected-file">No file selected yet.</p>
-              </div>
-            </div>
-          </div>
-
-          <details class="advanced">
-            <summary>Advanced (delimiter / encoding)</summary>
-            <div class="advanced-grid">
-              <label class="label">Delimiter
-                <input id="delimiter" placeholder="auto" />
-              </label>
-              <label class="label">Encoding
-                <input id="encoding" placeholder="utf-8" />
-              </label>
-            </div>
-          </details>
-
-          <div class="actions">
-            <div class="primary-actions">
-              <button id="runCsv" class="btn primary" type="button">Validate CSV</button>
-              <button id="runJson" class="btn secondary" type="button">Validate JSON</button>
-            </div>
-            <div class="secondary-actions">
-              <a class="btn ghost" href="samples/gmc-valid.json" download>Download sample JSON</a>
-              <a class="btn ghost" href="samples/gmc-broken.csv" download>Sample CSV (issues)</a>
-              <a class="btn ghost" href="samples/gmc-valid-general.csv" download>Sample CSV</a>
-            </div>
-          </div>
-
-          <section id="resultsCard" class="results hidden">
-            <div class="results-header">
-              <h3>Results</h3>
-            </div>
-            <div class="result-columns">
-              <div>
-                <h4>Errors</h4>
-                <div id="results-errors" class="issues"></div>
-              </div>
-              <div>
-                <h4>Warnings</h4>
-                <div id="results-warnings" class="issues"></div>
-              </div>
-              <div>
-                <h4>Opportunities</h4>
-                <div id="results-opps" class="issues"></div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div class="panel panel-spec" data-panel="spec" hidden>
-          <p class="muted">Understand the fields. Each card highlights whether the field is required, recommended, or conditional and any dependencies that are checked during validation.</p>
-          <div class="spec-grid">
-            <article class="spec-card">
-              <span class="badge required">Required</span>
-              <h4 class="field-name">Basic product data</h4>
-              <p class="field-desc"><code>id</code>, <code>title</code>, <code>description</code>, <code>link</code>, <code>image_link</code>, <code>availability</code>, <code>price</code></p>
-              <ul class="dependencies">
-                <li>Title ≤ 150, description ≤ 5000</li>
-                <li>Availability ∈ in_stock / out_of_stock / preorder / backorder</li>
-                <li>Price format: <code>15.00 USD</code></li>
-              </ul>
-            </article>
-
-            <article class="spec-card">
-              <span class="badge conditional">Conditional</span>
-              <h4 class="field-name">Identifiers</h4>
-              <p class="field-desc">If <code>identifier_exists</code> ≠ <code>no</code>, submit <code>gtin</code> or (<code>brand</code> + <code>mpn</code>). GTIN must pass GS1 checksum.</p>
-            </article>
-
-            <article class="spec-card">
-              <span class="badge required">Profile</span>
-              <h4 class="field-name">Apparel (US)</h4>
-              <p class="field-desc"><code>item_group_id</code>, <code>color</code>, <code>gender</code>, <code>age_group</code>, <code>size</code>.</p>
-              <p class="dependencies">Variants must differ by color / size / material / pattern / age_group / gender.</p>
-            </article>
-
-            <article class="spec-card">
-              <span class="badge recommended">Profile</span>
-              <h4 class="field-name">Local inventory (US)</h4>
-              <p class="field-desc"><code>id</code>, <code>store_code</code>, <code>price</code>, <code>availability</code>.</p>
-              <p class="dependencies">Recommended: <code>quantity</code>, <code>pickup_method</code>, <code>pickup_sla</code>.</p>
-            </article>
-          </div>
-        </div>
-
+    <section class="tabpane active" data-panel="validate">
+      <div class="controls">
+        <label>Profile:
+          <select class="profile-select">
+            <option value="general">General</option>
+            <option value="apparel">Apparel (US)</option>
+            <option value="local_inventory">Local Inventory (US)</option>
+          </select>
+        </label>
       </div>
+
+      <div class="uploader">
+        <div class="drop">
+          <div class="drop-inner">
+            <div class="drag">Drag & drop your feed</div>
+            <button id="browseBtn" type="button" class="btn">Browse files</button>
+            <input id="fileInput" type="file" style="display:none" accept=".csv,.json,.txt"/>
+            <div id="fileName" class="filename">No file selected yet.</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="runCsv" class="btn primary">Validate CSV</button>
+          <button id="runJson" class="btn">Validate JSON</button>
+        </div>
+      </div>
+
+      <div class="results threecol">
+        <div>
+          <h3>Errors <span id="countErrors" class="count"></span></h3>
+          <div id="results-errors" class="result-box"></div>
+        </div>
+        <div>
+          <h3>Warnings <span id="countWarnings" class="count"></span></h3>
+          <div id="results-warnings" class="result-box"></div>
+        </div>
+        <div>
+          <h3>Opportunities <span id="countOpps" class="count"></span></h3>
+          <div id="results-opps" class="result-box"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tabpane" data-panel="spec" hidden>
+      <div class="spec-controls">
+        <div class="status-filter">
+          <label><input type="checkbox" value="required" checked> Required</label>
+          <label><input type="checkbox" value="conditional" checked> Conditional</label>
+          <label><input type="checkbox" value="recommended" checked> Recommended</label>
+        </div>
+        <input id="specSearch" class="spec-search" placeholder="Search attributes (e.g., gtin, color, sale_price)"/>
+        <div class="spec-count">Showing <span id="specCount">0</span> fields</div>
+      </div>
+      <div class="controls">
+        <label>Profile:
+          <select class="profile-select">
+            <option value="general">General</option>
+            <option value="apparel">Apparel (US)</option>
+            <option value="local_inventory">Local Inventory (US)</option>
+          </select>
+        </label>
+      </div>
+      <div id="specGrid" class="spec-grid"></div>
     </section>
   </main>
 
-  <script src="app.js"></script>
+  <script src="/static/app.js" defer></script>
 </body>
 </html>
