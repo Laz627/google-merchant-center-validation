@@ -3,7 +3,6 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
 from typing import List, Dict, Any, Tuple
 import csv, io, json, re
 
@@ -23,8 +22,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-STATIC_DIR = (Path(__file__).resolve().parent.parent / "static")
-SPEC_FILE  = STATIC_DIR / "spec" / "gmc_spec_us_en.json"
+# in app/main.py (top area where you define paths)
+from pathlib import Path
+
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+
+# Try both possible locations for the spec file
+_candidate_specs = [
+    STATIC_DIR / "spec" / "gmc_spec_us_en.json",
+    STATIC_DIR / "gmc_spec_us_en.json",
+]
+for p in _candidate_specs:
+    if p.exists():
+        SPEC_FILE = p
+        break
+else:
+    raise FileNotFoundError(
+        f"Spec file not found. Tried: {', '.join(str(p) for p in _candidate_specs)}"
+    )
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
