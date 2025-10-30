@@ -1,1 +1,69 @@
-(function(){function ready(f){if(document.readyState!=='loading')f();else document.addEventListener('DOMContentLoaded',f)}const $=(q,c=document)=>c.querySelector(q);const $$=(q,c=document)=>Array.from(c.querySelectorAll(q));const esc=s=>(s||'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));let SPEC=null;function showTab(t){$$('.toggle').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));$$('.tabpane').forEach(p=>{const on=p.dataset.panel===t;p.hidden=!on;p.classList.toggle('active',on)})}function setCounts(e,w,o){$('#countErrors').textContent=String(e||0);$('#countWarnings').textContent=String(w||0);$('#countOpps').textContent=String(o||0)}function renderTable(d){const body=$('#results-body');body.innerHTML='';const all=[].concat((d.errors||[])).concat((d.warnings||[])).concat((d.opportunities||[]));if(!all.length){body.innerHTML='<tr class="empty"><td colspan="4">No issues found 🎉</td></tr>';setCounts(0,0,0);return}let e=0,w=0,o=0;for(const it of all){if(it.severity==='error')e++;else if(it.severity==='warning')w++;else o++;const tr=document.createElement('tr');const sev=it.severity||'opportunity';tr.innerHTML=`<td>${esc(String(it.row??'-'))}</td><td><code>${esc(it.field||'')}</code></td><td class="${sev==='error'?'sev-error':sev==='warning'?'sev-warning':'sev-opportunity'}">${esc(sev)}</td><td>${esc(it.message||'')}</td>`;body.appendChild(tr)}setCounts(e,w,o)}async function validate(kind){const file=$('#fileInput')?.files?.[0];if(!file){alert('Choose a file first.');return}const fd=new FormData();fd.append('file',file);fd.append('profile',($('.profile-select')?.value)||'general');const url=kind==='csv'?'/api/validate-csv':'/api/validate-json';const res=await fetch(url,{method:'POST',body:fd});if(!res.ok)throw new Error(await res.text()||'Validation failed');renderTable(await res.json())}async function loadSpec(){const res=await fetch('/api/spec');SPEC=await res.json();renderSpec()}function renderSpec(){if(!SPEC)return;const grid=$('#specGrid');const q=($('#specSearch')?.value||'').toLowerCase().trim();const profile=($('.profile-select')?.value)||'general';const allowed=new Set($$('.status-filter input:checked').map(i=>i.value));const rows=SPEC.attributes.filter(a=>(a.profiles||[]).includes(profile)&&allowed.has(a.status)&&(!q||a.name.toLowerCase().includes(q)||(a.desc||'').toLowerCase().includes(q)));grid.innerHTML='';for(const a of rows){const badge=a.status.toUpperCase();const cls=a.status;const ex=a.examples&&a.examples.length?`<div class="field-meta"><span class="meta-pill">e.g., ${esc(a.examples[0])}</span></div>`:'';const syn=a.syntax?`<div class="field-meta"><span class="meta-pill">syntax: ${esc(a.syntax)}</span></div>`:'';const card=document.createElement('article');card.className='spec-card';card.innerHTML=`<div class="badge ${esc(cls)}">${badge}</div><h5 class="field-name"><code>${esc(a.name)}</code></h5><p class="field-desc">${esc(a.desc||'')}</p>${syn}${ex}`;grid.appendChild(card)}$('#specCount').textContent=String(rows.length)}function initDnD(){const dz=$('#dropZone');const fi=$('#fileInput');function setOver(v){dz.classList.toggle('dragover',!!v)};['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();setOver(true)}));['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();setOver(false)}));dz.addEventListener('drop',e=>{const files=e.dataTransfer.files;if(files&&files.length){fi.files=files;$('#fileName').textContent=files[0].name}});dz.addEventListener('paste',e=>{const items=e.clipboardData?.files;if(items&&items.length){fi.files=items;$('#fileName').textContent=items[0].name}})}ready(function(){$$('.toggle').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));showTab('validate');$('#browseBtn')?.addEventListener('click',()=>$('#fileInput').click());$('#fileInput')?.addEventListener('change',()=>{$('#fileName').textContent=$('#fileInput').files[0]?.name||'No file selected yet.'});$('#runCsv')?.addEventListener('click',()=>validate('csv').catch(e=>alert(e.message||String(e))));$('#runJson')?.addEventListener('click',()=>validate('json').catch(e=>alert(e.message||String(e))));$$('.status-filter input').forEach(i=>i.addEventListener('change',renderSpec));$('#specSearch')?.addEventListener('input',renderSpec);$$('.profile-select').forEach(s=>s.addEventListener('change',renderSpec));initDnD();loadSpec()})})();
+(()=>{
+const $=q=>document.querySelector(q), $$=q=>Array.from(document.querySelectorAll(q));
+let SPEC=null, FILE=null;
+
+function setTab(name){$$('.tabbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+$$('.panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===name));}
+
+async function loadSpec(){
+  try{
+    const r = await fetch('/api/spec');
+    if(!r.ok){console.error('spec fetch failed', r.status); return;}
+    SPEC = await r.json();
+    renderSpec();
+  }catch(e){console.error('spec fetch err', e);}
+}
+
+function renderSpec(){
+  const grid = $('#specGrid'); if(!SPEC||!Array.isArray(SPEC.attributes)){grid.innerHTML=''; $('#count').textContent='0'; return;}
+  const profile = $('#specProfile').value;
+  const text = ($('#search').value||'').toLowerCase();
+  const allowed = new Set(['required','conditional','recommended','optional']);
+  const active = new Set($$('.filt:checked').map(x=>x.value).filter(v=>allowed.has(v)));
+  const items = SPEC.attributes.filter(a => a.profiles.includes(profile) && active.has(a.status) && (!text || a.name.toLowerCase().includes(text) || (a.desc||'').toLowerCase().includes(text)));
+  $('#count').textContent = items.length.toString();
+  grid.innerHTML = items.map(a => `<div class="card"><div><span class="badge ${a.status}">${a.status.toUpperCase()}</span></div>
+    <div><b>${a.name}</b></div><div class="muted">${(a.desc||'')}</div></div>`).join('');
+}
+
+function setCounts(r){$('#cErr').textContent=r.errors.length;$('#cWarn').textContent=r.warnings.length;$('#cOpp').textContent=r.opportunities.length;}
+function renderRows(r){
+  const tb = $('#tbody'); tb.innerHTML='';
+  const all = [...r.errors, ...r.warnings, ...r.opportunities];
+  if(!all.length){tb.innerHTML='<tr class="empty"><td colspan="4">No issues 🎉</td></tr>'; return;}
+  for(const row of all){
+    tb.insertAdjacentHTML('beforeend', `<tr>
+      <td>${row.row}</td><td>${row.field}</td><td>${row.severity}</td><td>${row.message}</td></tr>`);
+  }
+}
+
+async function run(kind){
+  if(!FILE){alert('Select or drop a file first.');return;}
+  const fd = new FormData(); fd.append('file', FILE); fd.append('profile', $('#profileSelect').value);
+  const url = kind==='csv'?'/api/validate-csv':'/api/validate-json';
+  const r = await fetch(url,{method:'POST',body:fd});
+  if(!r.ok){const t=await r.text(); console.error('validate failed', t); alert('Validation failed. Check console.'); return;}
+  const data = await r.json(); setCounts(data); renderRows(data);
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  // tabs
+  $$('.tabbtn').forEach(b=>b.addEventListener('click', ()=>setTab(b.dataset.tab)));
+  // spec filters
+  $('#specProfile').addEventListener('change', renderSpec);
+  $$('.filt').forEach(c=>c.addEventListener('change', renderSpec));
+  $('#search').addEventListener('input', renderSpec);
+
+  // drag & drop
+  const drop = $('#drop'), file = $('#file'), fname = $('#fname');
+  $('#browse').addEventListener('click', ()=>file.click());
+  file.addEventListener('change', ()=>{FILE=file.files[0]; fname.textContent=FILE?FILE.name:'No file selected';});
+  ;['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev, e=>{e.preventDefault(); drop.classList.add('hover');}));
+  ;['dragleave','drop'].forEach(ev=>drop.addEventListener(ev, e=>{e.preventDefault(); drop.classList.remove('hover');}));
+  drop.addEventListener('drop', e=>{const f = e.dataTransfer.files[0]; if(f){FILE=f; fname.textContent=f.name;}});
+
+  $('#runCsv').addEventListener('click', ()=>run('csv'));
+  $('#runJson').addEventListener('click', ()=>run('json'));
+  loadSpec();
+});
+})();
