@@ -1,0 +1,1115 @@
+{
+  "meta": {
+    "locale": "en-US",
+    "version": "2025-10-30",
+    "profiles": [
+      "general",
+      "apparel",
+      "local_inventory"
+    ]
+  },
+  "attributes": [
+    {
+      "name": "id",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Unique product ID; stable across updates; \u226450 chars.",
+      "syntax": "\u226450 chars",
+      "examples": [
+        "A2B4"
+      ]
+    },
+    {
+      "name": "title",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Product name; \u2264150; match PDP; no promo/ALL CAPS.",
+      "syntax": "\u2264150 chars",
+      "examples": [
+        "Mens Pique Polo Shirt"
+      ]
+    },
+    {
+      "name": "structured_title",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Use only when title created by AI; includes content + digital_source_type.",
+      "syntax": "object",
+      "examples": [
+        "{\"digital_source_type\":\"trained_algorithmic_media\",\"content\":\"...\"}"
+      ]
+    },
+    {
+      "name": "description",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Plain text \u22645000; match PDP; no links/promos/competitors.",
+      "syntax": "\u22645000 chars",
+      "examples": [
+        "Made from 100% organic cotton..."
+      ]
+    },
+    {
+      "name": "structured_description",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Use only for AI-generated descriptions; includes content + digital_source_type.",
+      "syntax": "object",
+      "examples": [
+        "{\"digital_source_type\":\"trained_algorithmic_media\",\"content\":\"...\"}"
+      ]
+    },
+    {
+      "name": "link",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Canonical product URL on verified domain.",
+      "syntax": "URL",
+      "examples": [
+        "https://example.com/p/123"
+      ]
+    },
+    {
+      "name": "image_link",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Main image URL; jpg/webp/png/gif/bmp/tiff; no borders/watermarks.",
+      "syntax": "URL",
+      "examples": [
+        "https://example.com/img/1.jpg"
+      ]
+    },
+    {
+      "name": "additional_image_link",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Up to 10 extra images; lifestyle allowed; repeatable.",
+      "syntax": "URL (repeatable)",
+      "examples": [
+        "https://example.com/img/1b.jpg"
+      ]
+    },
+    {
+      "name": "virtual_model_link",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "3D model URL (.gltf/.glb); \u226415MB; US only.",
+      "syntax": "URL",
+      "examples": [
+        "https://example.com/xyz.glb"
+      ]
+    },
+    {
+      "name": "mobile_link",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Mobile-optimized landing page (if used).",
+      "syntax": "URL",
+      "examples": [
+        "https://m.example.com/p/123"
+      ]
+    },
+    {
+      "name": "availability",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "Product availability enum.",
+      "syntax": "enum: in_stock|out_of_stock|preorder|backorder",
+      "examples": [
+        "in_stock"
+      ]
+    },
+    {
+      "name": "availability_date",
+      "status": "conditional",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "Required when availability=preorder; ISO-8601.",
+      "syntax": "YYYY-MM-DDThh:mmZ",
+      "examples": [
+        "2025-02-24T11:07+0100"
+      ]
+    },
+    {
+      "name": "cost_of_goods_sold",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "COGS for margin insights.",
+      "syntax": "<amount> <ISO4217>",
+      "examples": [
+        "23.00 USD"
+      ]
+    },
+    {
+      "name": "expiration_date",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "Date item should stop showing; \u226430d future.",
+      "syntax": "ISO-8601",
+      "examples": [
+        "2016-07-11T11:07+0100"
+      ]
+    },
+    {
+      "name": "price",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "Price must match PDP/checkout; currency rules by country.",
+      "syntax": "<amount> <ISO4217>",
+      "examples": [
+        "15.00 USD"
+      ]
+    },
+    {
+      "name": "sale_price",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "Sale price formatted like price.",
+      "syntax": "<amount> <ISO4217>",
+      "examples": [
+        "12.00 USD"
+      ]
+    },
+    {
+      "name": "sale_price_effective_date",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "ISO-8601 window 'start/end'.",
+      "syntax": "start/end",
+      "examples": [
+        "2016-02-24T11:07+0100/2016-02-29T23:07+0100"
+      ]
+    },
+    {
+      "name": "unit_pricing_measure",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "Measure of product as sold (e.g., 150ml).",
+      "syntax": "number+unit",
+      "examples": [
+        "150ml"
+      ]
+    },
+    {
+      "name": "unit_pricing_base_measure",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "Base for unit price (e.g., 100ml).",
+      "syntax": "1|10|100|2|4|8 + unit",
+      "examples": [
+        "100ml"
+      ]
+    },
+    {
+      "name": "installment",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "Installment plan; months/amount[/downpayment]/credit_type.",
+      "syntax": "sub-attrs",
+      "examples": [
+        "6:30 EUR:199 EUR"
+      ]
+    },
+    {
+      "name": "subscription_cost",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "Wireless subscription; period/length/amount; limited markets.",
+      "syntax": "sub-attrs",
+      "examples": [
+        "month:12:35.00USD"
+      ]
+    },
+    {
+      "name": "loyalty_program",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "Member prices/points/shipping; limited markets.",
+      "syntax": "sub-attrs",
+      "examples": [
+        "program:tier:10 USD::10::free_member_shipping"
+      ]
+    },
+    {
+      "name": "auto_pricing_min_price",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "Min price for automated discounts/dynamic promos.",
+      "syntax": "<amount> <ISO4217>",
+      "examples": [
+        "15.00 USD"
+      ]
+    },
+    {
+      "name": "maximum_retail_price",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel",
+        "local_inventory"
+      ],
+      "desc": "IN only; price per MRP policy.",
+      "syntax": "<amount> <ISO4217>",
+      "examples": [
+        "15.00 INR"
+      ]
+    },
+    {
+      "name": "google_product_category",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Google taxonomy ID/path; most specific.",
+      "syntax": "ID or full path",
+      "examples": [
+        "371"
+      ]
+    },
+    {
+      "name": "product_type",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Merchant category breadcrumb; \u2264750 chars.",
+      "syntax": "\u2264750 chars",
+      "examples": [
+        "Home > Women > Dresses > Maxi"
+      ]
+    },
+    {
+      "name": "brand",
+      "status": "conditional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Brand for most new products (not media/books/music).",
+      "syntax": "\u226470 chars",
+      "examples": [
+        "Google"
+      ]
+    },
+    {
+      "name": "gtin",
+      "status": "conditional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "GS1 GTIN (UPC/EAN/JAN/ISBN/ITF-14). Strongly recommended.",
+      "syntax": "numeric",
+      "examples": [
+        "3234567890126"
+      ]
+    },
+    {
+      "name": "mpn",
+      "status": "conditional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "If no GTIN, provide brand+mpn.",
+      "syntax": "\u226470 chars",
+      "examples": [
+        "GO12345OOGLE"
+      ]
+    },
+    {
+      "name": "identifier_exists",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "'no' only when brand/gtin/mpn truly not applicable.",
+      "syntax": "yes|no",
+      "examples": [
+        "yes"
+      ]
+    },
+    {
+      "name": "condition",
+      "status": "conditional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Required if used/refurbished; else optional.",
+      "syntax": "new|used|refurbished",
+      "examples": [
+        "new"
+      ]
+    },
+    {
+      "name": "adult",
+      "status": "conditional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Set 'yes' if product has adult content.",
+      "syntax": "yes|no",
+      "examples": [
+        "no"
+      ]
+    },
+    {
+      "name": "multipack",
+      "status": "conditional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Count of identical products in merchant-defined multipack.",
+      "syntax": "integer",
+      "examples": [
+        "6"
+      ]
+    },
+    {
+      "name": "is_bundle",
+      "status": "conditional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "'yes' for merchant-defined bundle with clear main product.",
+      "syntax": "yes|no",
+      "examples": [
+        "yes"
+      ]
+    },
+    {
+      "name": "certification",
+      "status": "conditional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "EU/UK energy labels via EPREL; use for EU; authority/name/code.",
+      "syntax": "sub-attrs",
+      "examples": [
+        "EC:EPREL:123456"
+      ]
+    },
+    {
+      "name": "energy_efficiency_class",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Only CH/NO/UK (non-EU); A+++..G.",
+      "syntax": "enum",
+      "examples": [
+        "A+"
+      ]
+    },
+    {
+      "name": "min_energy_efficiency_class",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Only CH/NO/UK; A+++..G.",
+      "syntax": "enum",
+      "examples": [
+        "A+++"
+      ]
+    },
+    {
+      "name": "max_energy_efficiency_class",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Only CH/NO/UK; A+++..G.",
+      "syntax": "enum",
+      "examples": [
+        "D"
+      ]
+    },
+    {
+      "name": "age_group",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Apparel demographic.",
+      "syntax": "enum",
+      "examples": [
+        "adult"
+      ]
+    },
+    {
+      "name": "color",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Apparel color; \u2264100 (\u226440 per color).",
+      "syntax": "text",
+      "examples": [
+        "Black"
+      ]
+    },
+    {
+      "name": "gender",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Apparel gender.",
+      "syntax": "enum",
+      "examples": [
+        "unisex"
+      ]
+    },
+    {
+      "name": "material",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Fabric/material; primary + up to 2, separated by '/'.",
+      "syntax": "\u2264200",
+      "examples": [
+        "cotton/polyester/elastane"
+      ]
+    },
+    {
+      "name": "pattern",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Pattern print; \u2264100.",
+      "syntax": "\u2264100",
+      "examples": [
+        "striped"
+      ]
+    },
+    {
+      "name": "size",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Clothing/Shoes size; \u2264100.",
+      "syntax": "\u2264100",
+      "examples": [
+        "XL"
+      ]
+    },
+    {
+      "name": "size_type",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Apparel cut.",
+      "syntax": "regular|petite|maternity|big|tall|plus",
+      "examples": [
+        "regular"
+      ]
+    },
+    {
+      "name": "size_system",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Country size system.",
+      "syntax": "US|UK|EU|DE|FR|JP|CN|IT|BR|MEX|AU",
+      "examples": [
+        "US"
+      ]
+    },
+    {
+      "name": "item_group_id",
+      "status": "conditional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Variants group ID (size/color/etc.).",
+      "syntax": "\u226450",
+      "examples": [
+        "AB12345"
+      ]
+    },
+    {
+      "name": "product_length",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Assembled product length.",
+      "syntax": "number+unit (cm|in)",
+      "examples": [
+        "20 in"
+      ]
+    },
+    {
+      "name": "product_width",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Assembled product width.",
+      "syntax": "number+unit (cm|in)",
+      "examples": [
+        "20 in"
+      ]
+    },
+    {
+      "name": "product_height",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Assembled product height.",
+      "syntax": "number+unit (cm|in)",
+      "examples": [
+        "20 in"
+      ]
+    },
+    {
+      "name": "product_weight",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Assembled product weight.",
+      "syntax": "number+unit (lb|oz|g|kg)",
+      "examples": [
+        "3.5 lb"
+      ]
+    },
+    {
+      "name": "product_detail",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Key/value spec groups (section/attribute/value).",
+      "syntax": "sub-attrs",
+      "examples": [
+        "General:Product Type:Digital player"
+      ]
+    },
+    {
+      "name": "product_highlight",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "2-100 highlights; each \u2264150 chars.",
+      "syntax": "\u2264150 (repeatable)",
+      "examples": [
+        "Supports Netflix, YouTube..."
+      ]
+    },
+    {
+      "name": "ads_redirect",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "URL with extra params; must share registered domain.",
+      "syntax": "URL",
+      "examples": [
+        "https://example.com/product.html?adsrc=..."
+      ]
+    },
+    {
+      "name": "custom_label_0",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Custom label for Shopping campaigns (0-4).",
+      "syntax": "\u2264100",
+      "examples": [
+        "Seasonal"
+      ]
+    },
+    {
+      "name": "custom_label_1",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Custom label for Shopping campaigns.",
+      "syntax": "\u2264100",
+      "examples": [
+        "Clearance"
+      ]
+    },
+    {
+      "name": "custom_label_2",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Custom label for Shopping campaigns.",
+      "syntax": "\u2264100",
+      "examples": [
+        "Holiday"
+      ]
+    },
+    {
+      "name": "custom_label_3",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Custom label for Shopping campaigns.",
+      "syntax": "\u2264100",
+      "examples": [
+        "Sale"
+      ]
+    },
+    {
+      "name": "custom_label_4",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Custom label for Shopping campaigns.",
+      "syntax": "\u2264100",
+      "examples": [
+        "Price range"
+      ]
+    },
+    {
+      "name": "promotion_id",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "ID to map products to promotions; up to 10 per product.",
+      "syntax": "\u226450",
+      "examples": [
+        "ABC123"
+      ]
+    },
+    {
+      "name": "lifestyle_image_link",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Lifestyle image URL (browsy surfaces).",
+      "syntax": "URL",
+      "examples": [
+        "https://example.com/img1.jpg"
+      ]
+    },
+    {
+      "name": "short_title",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Demand Gen short title (5\u201365 rec; \u2264150 max).",
+      "syntax": "\u2264150",
+      "examples": [
+        "Running shoes"
+      ]
+    },
+    {
+      "name": "external_seller_id",
+      "status": "required",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "For multi-seller accounts: seller external identifier.",
+      "syntax": "1\u201350",
+      "examples": [
+        "SellerPublicName1991"
+      ]
+    },
+    {
+      "name": "excluded_destination",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Exclude from a destination (e.g., Shopping_ads).",
+      "syntax": "enum list",
+      "examples": [
+        "Shopping_ads"
+      ]
+    },
+    {
+      "name": "included_destination",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Include in specific destination.",
+      "syntax": "enum list",
+      "examples": [
+        "Free_listings"
+      ]
+    },
+    {
+      "name": "shopping_ads_excluded_country",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Exclude a country for Shopping ads (ISO alpha-2).",
+      "syntax": "ISO country",
+      "examples": [
+        "DE"
+      ]
+    },
+    {
+      "name": "pause",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Pause product for all ads (max 14 days).",
+      "syntax": "ads",
+      "examples": [
+        "ads"
+      ]
+    },
+    {
+      "name": "shipping",
+      "status": "conditional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Per-offer shipping config; overrides account settings.",
+      "syntax": "sub-attrs",
+      "examples": [
+        "US:CA:Overnight:16.00 USD:1:1:2:3"
+      ]
+    },
+    {
+      "name": "carrier_shipping",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Carrier service & calc config.",
+      "syntax": "sub-attrs",
+      "examples": [
+        "US:80302:USPS_MEDIA_MAIL:1:3:2:5"
+      ]
+    },
+    {
+      "name": "shipping_label",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Join to account shipping rules.",
+      "syntax": "\u2264100",
+      "examples": [
+        "perishable"
+      ]
+    },
+    {
+      "name": "shipping_weight",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Weight for carrier-calculated rates.",
+      "syntax": "number+unit",
+      "examples": [
+        "3 kg"
+      ]
+    },
+    {
+      "name": "shipping_length",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Dim. length for carrier-calculated.",
+      "syntax": "number+unit",
+      "examples": [
+        "20 in"
+      ]
+    },
+    {
+      "name": "shipping_width",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Dim. width for carrier-calculated.",
+      "syntax": "number+unit",
+      "examples": [
+        "20 in"
+      ]
+    },
+    {
+      "name": "shipping_height",
+      "status": "recommended",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Dim. height for carrier-calculated.",
+      "syntax": "number+unit",
+      "examples": [
+        "20 in"
+      ]
+    },
+    {
+      "name": "ships_from_country",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Origin country in ISO alpha-2.",
+      "syntax": "ISO country",
+      "examples": [
+        "DE"
+      ]
+    },
+    {
+      "name": "max_handling_time",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Max business days to ship.",
+      "syntax": "integer \u22650",
+      "examples": [
+        "3"
+      ]
+    },
+    {
+      "name": "min_handling_time",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Min business days to ship.",
+      "syntax": "integer \u22650",
+      "examples": [
+        "1"
+      ]
+    },
+    {
+      "name": "shipping_transit_business_days",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Transit business days per country.",
+      "syntax": "sub-attrs",
+      "examples": [
+        "Mon-Fri;Sun"
+      ]
+    },
+    {
+      "name": "shipping_handling_business_days",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Handling business days.",
+      "syntax": "sub-attrs",
+      "examples": [
+        "Mon-Fri;U"
+      ]
+    },
+    {
+      "name": "free_shipping_threshold",
+      "status": "optional",
+      "profiles": [
+        "general",
+        "apparel"
+      ],
+      "desc": "Order cost above which shipping is free.",
+      "syntax": "sub-attrs",
+      "examples": [
+        "US:16.00 USD"
+      ]
+    },
+    {
+      "name": "store_code",
+      "status": "required",
+      "profiles": [
+        "local_inventory"
+      ],
+      "desc": "Store code, must exist in store feed.",
+      "syntax": "text",
+      "examples": [
+        "STORE_001"
+      ]
+    },
+    {
+      "name": "quantity",
+      "status": "recommended",
+      "profiles": [
+        "local_inventory"
+      ],
+      "desc": "On-hand quantity.",
+      "syntax": "integer",
+      "examples": [
+        "7"
+      ]
+    },
+    {
+      "name": "pickup_method",
+      "status": "recommended",
+      "profiles": [
+        "local_inventory"
+      ],
+      "desc": "buy | reserve (per LI).",
+      "syntax": "enum",
+      "examples": [
+        "buy"
+      ]
+    },
+    {
+      "name": "pickup_sla",
+      "status": "recommended",
+      "profiles": [
+        "local_inventory"
+      ],
+      "desc": "same_day / next_day ...",
+      "syntax": "enum",
+      "examples": [
+        "same_day"
+      ]
+    }
+  ]
+}
