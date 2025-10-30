@@ -187,7 +187,8 @@ def index():
 
 @app.get("/api/spec")
 def get_spec():
-    return FileResponse(str(SPEC_FILE))
+    with open(SPEC_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 @app.post("/api/validate-csv")
 async def validate_csv(file: UploadFile = File(...), profile: str = Form("general")):
