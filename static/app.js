@@ -60,19 +60,27 @@
   const resultsOpps = $("#results-opps");
   const resultsCard = $("#resultsCard");
 
-  function renderIssues(container, issues){
+  function renderIssues(container, issues, countEl){
+    const list = issues || [];
+    if(countEl){
+      countEl.textContent = String(list.length);
+    }
     container.innerHTML = "";
-    if(!issues || !issues.length){
+    if(!list.length){
       container.innerHTML = '<div class="empty">None 🎉</div>';
       return;
     }
-    for(const it of issues){
-      const row = document.createElement("div");
+    for(const it of list){
+      const row = document.createElement("article");
       row.className = "issue-row";
+      const field = escapeHtml(it.field || "");
+      const message = escapeHtml(it.message || "");
       row.innerHTML = `
-        <div class="badge">Row ${it.row ?? "-"}</div>
-        <div class="field"><code>${escapeHtml(it.field||"")}</code></div>
-        <div class="msg">${escapeHtml(it.message||"")}</div>
+        <header class="issue-header">
+          <span class="issue-pill">Row ${it.row ?? "-"}</span>
+          ${field ? `<code class="issue-field">${field}</code>` : ""}
+        </header>
+        <p class="issue-message">${message}</p>
       `;
       container.appendChild(row);
     }
