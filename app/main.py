@@ -6,15 +6,12 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 import csv, io, json, re
+
 # AFTER (tolerant to both layouts; avoids third-party "validators" collision)
 try:
-    from app.validators.gtin import is_valid_gtin  # app-scoped package path
+    from app.validators.gtin import is_valid_gtin   # app-scoped package path
 except ModuleNotFoundError:
-    from gtin import is_valid_gtin                 # flat layout fallback
-
-
-
-from validators.gtin import is_valid_gtin
+    from gtin import is_valid_gtin                  # flat-layout fallback
 
 app = FastAPI(title="Google Merchant Center Product Feed Validator", version="3.0.0")
 
