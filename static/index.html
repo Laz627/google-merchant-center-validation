@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -13,113 +12,121 @@
       <div class="logo">G</div>
       <div class="titles">
         <h1>Google Merchant Center Product Feed Validator</h1>
-        <p class="tagline">Validate your feed against US/English GMC rules. Exact header names required. Same UI, better checks.</p>
+        <p class="tagline">Validate JSON / CSV feeds against US/EN GMC spec. Exact headers. Checks formatting, enums, and rule dependencies.</p>
       </div>
     </div>
     <nav class="top-links">
       <a href="#spec">Spec</a>
-      <a href="#samples">Samples</a>
       <a href="https://support.google.com/merchants/answer/7052112" target="_blank" rel="noopener">GMC Docs</a>
+      <a href="https://www.linkedin.com/in/brandonlazovic/" target="_blank" rel="noopener">LinkedIn</a>
     </nav>
   </header>
 
   <main class="container">
-    <section class="intro info-card">
-      <h2>Why this matters</h2>
-      <p>Clean product data powers both paid & free listings, improves match quality, and reduces disapprovals that suppress visibility. This validator enforces GMC-required attributes as <strong>Errors</strong>, important optional fields as <strong>Warnings</strong>, and growth ideas as <strong>Opportunities</strong>.</p>
-      <ul class="meta-list">
-        <li>Headers must match GMC attribute names exactly</li>
-        <li>Profiles: General, Apparel (US), Local Inventory (US)</li>
-        <li>Inputs: CSV / JSON (arrays or {"items":[]})</li>
-      </ul>
-    </section>
-
-    <div class="tabs">
-      <button class="tab active">Validate CSV</button>
-      <button class="tab">Validate JSON</button>
-      <button class="tab" id="spec">Spec & Guidance</button>
-    </div>
-
-    <section class="panel">
-      <div class="controls">
-        <label>Profile:
-          <select class="profile-select">
-            <option value="general">General</option>
-            <option value="apparel">Apparel (US)</option>
-            <option value="local_inventory">Local Inventory (US)</option>
-          </select>
-        </label>
+    <section class="hero card">
+      <div class="hero-meta">
+        <span class="pill">≤ 50 000 rows per run</span>
+        <span class="pill">JSON / CSV</span>
+        <span class="pill">Checks formatting, enums, & dependencies</span>
       </div>
-      <form id="csvForm" class="uploader">
-        <input id="csvFile" type="file" accept=".csv" />
-        <button type="submit">Validate CSV</button>
-      </form>
+      <h2>Validate your product feed</h2>
+      <p>Upload a JSON array or CSV with headers. We check required vs recommended fields and rule dependencies for the Google Merchant Center spec.</p>
 
-      <form id="jsonForm" class="uploader">
-        <input id="jsonFile" type="file" accept=".json,.txt,.ndjson" />
-        <button type="submit">Validate JSON</button>
-      </form>
-
-      <div class="results">
-        <h3>Errors</h3>
-        <div id="results-errors" class="issues"></div>
-
-        <h3>Warnings</h3>
-        <div id="results-warnings" class="issues"></div>
-
-        <h3>Opportunities & Info</h3>
-        <div id="results-opps" class="issues"></div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h3>Specs (US/English)</h3>
-
-      <button class="spec-toggle" data-target="#spec-basic">Basic product data</button>
-      <div id="spec-basic" class="spec-body">
-        <p><strong>Required:</strong> id, title, description, link, image_link, availability, price.</p>
-        <ul>
-          <li>title ≤ 150 chars; description ≤ 5000.</li>
-          <li>link/image_link must be http(s) URLs.</li>
-          <li>availability ∈ {in_stock, out_of_stock, preorder, backorder}.</li>
-          <li>price format: <code>15.00 USD</code> (ISO-4217).</li>
-        </ul>
+      <div class="toggle-tabs" role="tablist">
+        <button class="toggle active" data-tab="validate" role="tab">Validate</button>
+        <button class="toggle" data-tab="spec" role="tab">Spec & Requirements</button>
       </div>
 
-      <button class="spec-toggle" data-target="#spec-identifiers">Product identifiers</button>
-      <div id="spec-identifiers" class="spec-body">
-        <p>If <code>identifier_exists</code> ≠ <code>no</code>, submit <strong>gtin</strong> or (<strong>brand</strong> + <strong>mpn</strong>). GTINs must pass GS1 checksum.</p>
+      <div class="panel panel-validate" data-panel="validate">
+        <div class="steps">
+          <div class="step active"><span>1</span><small>Add File</small></div>
+          <div class="step"><span>2</span><small>Validate</small></div>
+          <div class="step"><span>3</span><small>Review & Export</small></div>
+        </div>
+
+        <div class="controls">
+          <label>Profile
+            <select class="profile-select">
+              <option value="general">General</option>
+              <option value="apparel">Apparel (US)</option>
+              <option value="local_inventory">Local Inventory (US)</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="dropZone" class="dropzone" tabindex="0" aria-label="Drag & drop your feed or browse">
+          <div class="dz-inner">
+            <div class="dz-ghost">Drag & drop your feed</div>
+            <button id="browseBtn" class="btn ghost" type="button">Browse files</button>
+            <div id="fileName" class="file-name">No file selected yet.</div>
+          </div>
+          <input id="fileInput" type="file" accept=".csv,.json" hidden />
+        </div>
+
+        <div class="actions">
+          <details class="advanced">
+            <summary>Advanced (delimiter / encoding)</summary>
+            <div class="advanced-body">
+              <label>Delimiter <input id="delimiter" placeholder="auto" /></label>
+              <label>Encoding <input id="encoding" placeholder="utf-8" /></label>
+            </div>
+          </details>
+          <div class="action-buttons">
+            <button id="runCsv" class="btn primary">Validate CSV</button>
+            <button id="runJson" class="btn">Validate JSON</button>
+            <a class="btn ghost" href="samples/gmc-valid.json" download>Download sample JSON</a>
+            <a class="btn ghost" href="samples/gmc-broken.csv" download>Sample CSV (issues)</a>
+            <a class="btn ghost" href="samples/gmc-valid-general.csv" download>Sample CSV</a>
+          </div>
+        </div>
+
+        <div class="results card">
+          <h3>Results</h3>
+          <div class="result-columns">
+            <div>
+              <h4>Errors</h4>
+              <div id="results-errors" class="issues"></div>
+            </div>
+            <div>
+              <h4>Warnings</h4>
+              <div id="results-warnings" class="issues"></div>
+            </div>
+            <div>
+              <h4>Opportunities</h4>
+              <div id="results-opps" class="issues"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <button class="spec-toggle" data-target="#spec-apparel">Apparel (US)</button>
-      <div id="spec-apparel" class="spec-body">
-        <p><strong>Required when profile = Apparel:</strong> item_group_id, color, gender, age_group, size. Variants in a group should differ by color/size/material/pattern/age_group/gender.</p>
-      </div>
+      <div class="panel panel-spec" data-panel="spec" hidden>
+        <div class="spec-grid">
+          <article class="spec-card">
+            <h4>Basic product data <span class="req">Required</span></h4>
+            <p><code>id</code>, <code>title</code>, <code>description</code>, <code>link</code>, <code>image_link</code>, <code>availability</code>, <code>price</code></p>
+            <ul>
+              <li>title ≤ 150, description ≤ 5000</li>
+              <li>availability ∈ in_stock / out_of_stock / preorder / backorder</li>
+              <li>price format: <code>15.00 USD</code></li>
+            </ul>
+          </article>
 
-      <button class="spec-toggle" data-target="#spec-local">Local Inventory (US)</button>
-      <div id="spec-local" class="spec-body">
-        <p><strong>Required when profile = Local Inventory:</strong> id, store_code, price, availability. Recommended: quantity, pickup_method, pickup_sla.</p>
-      </div>
+          <article class="spec-card">
+            <h4>Identifiers</h4>
+            <p>If <code>identifier_exists</code> ≠ <code>no</code>, submit <code>gtin</code> or (<code>brand</code> + <code>mpn</code>). GTIN must pass GS1 checksum.</p>
+          </article>
 
-      <button class="spec-toggle" data-target="#spec-shipping">Shipping & Pricing details</button>
-      <div id="spec-shipping" class="spec-body">
-        <ul>
-          <li><code>sale_price</code> requires same format as price; optional <code>sale_price_effective_date</code> must be ISO8601 start/end.</li>
-          <li>Unit pricing: <code>unit_pricing_measure</code> and <code>unit_pricing_base_measure</code> validated for units and integers.</li>
-          <li>Shipping dims/weight format: <code>&lt;number&gt; &lt;unit&gt;</code> with units in, cm, lb, oz, g, kg.</li>
-        </ul>
-      </div>
-    </section>
+          <article class="spec-card">
+            <h4>Apparel (US) <span class="req">Profile</span></h4>
+            <p><code>item_group_id</code>, <code>color</code>, <code>gender</code>, <code>age_group</code>, <code>size</code>. Variants must differ by color/size/material/pattern/age_group/gender.</p>
+          </article>
 
-    <section id="samples" class="panel">
-      <h3>Sample files</h3>
-      <ul>
-        <li><a href="samples/gmc-valid-general.csv" download>gmc-valid-general.csv</a></li>
-        <li><a href="samples/gmc-apparel-us.csv" download>gmc-apparel-us.csv</a></li>
-        <li><a href="samples/gmc-local-inventory.csv" download>gmc-local-inventory.csv</a></li>
-        <li><a href="samples/gmc-broken.csv" download>gmc-broken.csv</a></li>
-        <li><a href="samples/gmc-valid.json" download>gmc-valid.json</a></li>
-      </ul>
+          <article class="spec-card">
+            <h4>Local Inventory (US) <span class="req">Profile</span></h4>
+            <p><code>id</code>, <code>store_code</code>, <code>price</code>, <code>availability</code>. Recommended: <code>quantity</code>, <code>pickup_method</code>, <code>pickup_sla</code>.</p>
+          </article>
+        </div>
+      </div>
     </section>
   </main>
 
