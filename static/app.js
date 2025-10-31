@@ -1,59 +1,9 @@
-/* static/app.js */
-/* Mirrors original OpenAI validator wiring.
-   - No top-level await
-   - Profile-aware spec loading
-   - Sorts Spec cards in-memory (Required → Conditional → Recommended → Optional → name)
-   - Robust tab + drag/drop wiring with conservative fallbacks (NO DOM/CSS changes) */
-
-if (typeof SPEC_FIELDS === "undefined") {
-  var SPEC_FIELDS = [];
-}
-
-var renderSpecGrid;
-var updateChipCounts;
-var initSpecFilterKeyboard;
-var initCopyButtons;
-var updateSelectedFile;
-var setDownloadsEnabled;
-var showTab;
-
-// Safe bootstrap without top-level await
-(function () {
-  function safe(fn) {
-    try {
-      fn && fn();
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  function bootstrap() {
-    safe(renderSpecGrid);
-    safe(updateChipCounts);
-    safe(initSpecFilterKeyboard);
-    safe(initCopyButtons);
-    safe(updateSelectedFile);
-    safe(typeof setDownloadsEnabled === "function" ? setDownloadsEnabled.bind(null, false) : null);
-    if (typeof showTab === "function") {
-      showTab("validate");
-    }
-  }
-
-  if (typeof window !== "undefined") {
-    window.__appBootstrap = bootstrap;
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", bootstrap, { once: true });
-  } else {
-    bootstrap();
-  }
-})();
+/* static/app.js - FIXED VERSION */
 
 (function () {
   "use strict";
 
-  // -------------------- tiny utils --------------------
+  // -------------------- Utilities --------------------
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
   const on = (el, ev, fn, opts) => el && el.addEventListener(ev, fn, opts);
@@ -64,21 +14,27 @@ var showTab;
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
-  const escAttr = esc;
 
-  // -------------------- state --------------------
+  // -------------------- State --------------------
+  let SPEC_FIELDS = [];
   let ACTIVE_PROFILE = "general";
   let CURRENT_FILE = null;
   let CURRENT_FILENAME = "";
   let CURRENT_ENCODING = "utf-8";
   let CURRENT_DELIM = "";
 
-  // -------------------- spec load + sort --------------------
+  // -------------------- Spec Loading --------------------
   async function loadSpec(profile) {
     const p = (profile || ACTIVE_PROFILE || "general").trim();
-    const res = await fetch(`/api/spec?profile=${encodeURIComponent(p)}`);
-    if (!res.ok) throw new Error(`Spec load failed: ${res.status}`);
-    SPEC_FIELDS = await res.json();
+    try {
+      const res = await fetch(`/api/spec?profile=${encodeURIComponent(p)}`);
+      if (!res.ok) throw new Error(`Spec load failed: ${res.status}`);
+      SPEC_FIELDS = await res.json();
+      console.log(`Loaded ${SPEC_FIELDS.length} fields for profile: ${p}`);
+    } catch (err) {
+      console.error("Failed to load spec:", err);
+      SPEC_FIELDS = [];
+    }
   }
 
   function sortSpecByImportance(fields) {
@@ -91,449 +47,356 @@ var showTab;
     });
   }
 
-  function getActiveProfile() {
-    const sel =
-      $("#profile-select") ||
-      $("[data-profile-select]") ||
-      $("[name='profile']");
-    if (sel) return sel.value || "general";
-    return ACTIVE_PROFILE || "general";
-  }
-
-  // -------------------- tabs (robust, ARIA-first) --------------------
-  function showTabId(panelId) {
-    if (!panelId) return;
-
-    const tabs = $$("[role='tab']");
-    const panels = $$("[role='tabpanel']");
-
-    if (tabs.length && panels.length) {
-      const targetPanel = document.getElementById(panelId) || $(`#${panelId}`);
-      panels.forEach((p) => p.setAttribute("hidden", "true"));
-      if (targetPanel) targetPanel.removeAttribute("hidden");
-
-      const tab = tabs.find((t) => t.getAttribute("aria-controls") === panelId);
-      tabs.forEach((t) => t.setAttribute("aria-selected", "false"));
-      if (tab) tab.setAttribute("aria-selected", "true");
+  function renderSpecGrid() {
+    const specGrid = $("#spec-grid");
+    if (!specGrid) return;
+    
+    const fields = Array.isArray(SPEC_FIELDS) ? sortSpecByImportance(SPEC_FIELDS) : [];
+    
+    if (fields.length === 0) {
+      specGrid.innerHTML = '<p class="muted" style="padding: 20px;">Loading specification...</p>';
       return;
     }
 
-    const panel = document.getElementById(panelId) || $(`#${panelId}`);
-    const allPanels = $$("[id^='panel-']");
-    allPanels.forEach((p) => p.classList.add("hidden"));
-    if (panel) panel.classList.remove("hidden");
-
-    const allTabs = $$("[id^='tab-']");
-    allTabs.forEach((t) => t.setAttribute("aria-selected", "false"));
-    const inferredTab = document.getElementById(panelId.replace("panel-", "tab-"));
-    if (inferredTab) inferredTab.setAttribute("aria-selected", "true");
+    specGrid.innerHTML = fields
+      .map((field) => {
+        const name = field?.name || "";
+        const importance = (field?.importance || "optional").toLowerCase();
+        const badgeLabel = importance.charAt(0).toUpperCase() + importance.slice(1);
+        const description = field?.description || field?.desc || "";
+        let dependencyText = field?.dependencies || "No additional dependencies.";
+        
+        return `
+          <button type="button" class="spec-card" data-field="${esc(name)}" data-importance="${esc(importance)}">
+            <div class="spec-card__title">${esc(name)}</div>
+            <div class="spec-card__badge badge badge-${esc(importance)}">${esc(badgeLabel)}</div>
+            <div class="spec-card__desc">${esc(description)}</div>
+            <div class="spec-card__deps">${esc(dependencyText)}</div>
+          </button>
+        `;
+      })
+      .join("");
   }
 
-  showTab = function (name) {
-    if (!name) return;
+  // -------------------- Tabs --------------------
+  function showTab(name) {
     const panelId = name === "spec" ? "panel-spec" : "panel-validate";
-    showTabId(panelId);
-  };
+    
+    // Hide all panels
+    $$("[role='tabpanel']").forEach((p) => p.classList.add("hidden"));
+    
+    // Show target panel
+    const targetPanel = $(`#${panelId}`);
+    if (targetPanel) targetPanel.classList.remove("hidden");
+    
+    // Update tab states
+    $$("[role='tab']").forEach((t) => t.setAttribute("aria-selected", "false"));
+    const activeTab = name === "spec" ? $("#tab-spec") : $("#tab-validate");
+    if (activeTab) activeTab.setAttribute("aria-selected", "true");
+  }
 
   function initTabs() {
-    on(document, "click", (e) => {
-      const t = e.target.closest("[role='tab']");
-      if (!t) return;
-      const controls = t.getAttribute("aria-controls");
-      if (!controls) return;
-      e.preventDefault();
-      showTabId(controls);
-    });
-
-    const tabValidate =
-      $("#tab-validate") || $("[data-tab='validate']") || null;
-    const tabSpec = $("#tab-spec") || $("[data-tab='spec']") || null;
-
-    on(tabValidate, "click", (e) => {
+    on($("#tab-validate"), "click", (e) => {
       e.preventDefault();
       showTab("validate");
     });
-    on(tabSpec, "click", (e) => {
+    
+    on($("#tab-spec"), "click", (e) => {
       e.preventDefault();
       showTab("spec");
     });
+    
+    // Show validate tab by default
+    showTab("validate");
+  }
 
-    const selected = $("[role='tab'][aria-selected='true']");
-    if (selected && selected.getAttribute("aria-controls")) {
-      showTabId(selected.getAttribute("aria-controls"));
-    } else if (document.getElementById("panel-validate")) {
-      showTab("validate");
+  // -------------------- File Selection --------------------
+  function updateSelectedFile() {
+    const el = $("#selected-file");
+    if (el) {
+      el.textContent = CURRENT_FILENAME ? CURRENT_FILENAME : "No file selected yet.";
     }
   }
 
-  // -------------------- counters --------------------
+  function handleFileSelection(file) {
+    if (!file) return;
+    CURRENT_FILE = file;
+    CURRENT_FILENAME = file.name;
+    updateSelectedFile();
+    console.log("File selected:", file.name);
+  }
+
+  // -------------------- Drag & Drop --------------------
+  function initDragAndDrop() {
+    const dropZone = $("#drop-zone");
+    const fileInput = $("#file-input");
+    
+    if (!dropZone || !fileInput) {
+      console.error("Drop zone or file input not found");
+      return;
+    }
+
+    // File input change
+    on(fileInput, "change", (e) => {
+      const file = e.target?.files?.[0];
+      if (file) handleFileSelection(file);
+    });
+
+    // Click to browse
+    on(dropZone, "click", (e) => {
+      if (e.target !== fileInput) {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    // Drag events
+    on(dropZone, "dragover", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add("dragging");
+    });
+
+    on(dropZone, "dragleave", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove("dragging");
+    });
+
+    on(dropZone, "drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove("dragging");
+      
+      const file = e.dataTransfer?.files?.[0];
+      if (file) {
+        handleFileSelection(file);
+        // Sync with file input
+        try {
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          fileInput.files = dt.files;
+        } catch (err) {
+          console.warn("Could not sync file input:", err);
+        }
+      }
+    });
+
+    console.log("Drag & drop initialized");
+  }
+
+  // -------------------- Browse Button --------------------
+  function initBrowseButton() {
+    const browseBtn = $("#btn-browse");
+    const fileInput = $("#file-input");
+    
+    if (browseBtn && fileInput) {
+      on(browseBtn, "click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fileInput.click();
+      });
+    }
+  }
+
+  // -------------------- Validation --------------------
+  function clearResults() {
+    const tbody = $("#issues-body");
+    if (tbody) tbody.innerHTML = "";
+    
+    const noIssues = $("#no-issues");
+    if (noIssues) noIssues.classList.add("hidden");
+    
+    const noResults = $("#no-results");
+    if (noResults) noResults.classList.remove("hidden");
+    
+    setCountersDisplay(0, 0, 0);
+    setDownloadsEnabled(false);
+  }
+
   function setCountersDisplay(errors, warnings, opportunities) {
-    const mapIds = [
+    const counters = [
       ["counter-errors", errors],
       ["counter-warnings", warnings],
       ["counter-opportunities", opportunities],
       ["count-errors", errors],
       ["count-warnings", warnings],
       ["count-opportunities", opportunities],
+      ["count-all", errors + warnings + opportunities],
+      ["count-error", errors],
+      ["count-warning", warnings],
+      ["count-opportunity", opportunities]
     ];
-    mapIds.forEach(([id, value]) => {
-      const el = document.getElementById(id);
+    
+    counters.forEach(([id, value]) => {
+      const el = $(`#${id}`);
       if (el) el.textContent = String(value ?? 0);
     });
   }
 
-  updateChipCounts = function () {
-    // preserve your existing chip behavior if present
-  };
-
-  initSpecFilterKeyboard = function () {
-    // placeholder to keep existing keyboard shortcuts alive if defined elsewhere
-  };
-
-  initCopyButtons = function () {
-    // placeholder to keep existing copy interactions alive if defined elsewhere
-  };
-
-  // -------------------- drag & drop (robust, zero DOM changes) --------------------
-  function pickDropzone() {
-    return (
-      document.getElementById("drop-zone") ||
-      document.getElementById("dropzone") ||
-      $(".dropzone") ||
-      $("[data-dropzone]") ||
-      $("#uploader") ||
-      $("#upload-area")
-    );
-  }
-
-  function pickFileInput() {
-    return (
-      document.getElementById("file-input") ||
-      $("input[type='file'][data-file-input]") ||
-      $("input[type='file']")
-    );
-  }
-
-  updateSelectedFile = function () {
-    const el =
-      document.getElementById("selected-file") ||
-      $("[data-selected-file]") ||
-      $("#file-label");
-    if (el) el.textContent = CURRENT_FILENAME ? CURRENT_FILENAME : "No file selected";
-  };
-
-  function syncFileInputWithCurrent(file) {
-    const input = pickFileInput();
-    if (!input || !file) return;
-    try {
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      input.files = dt.files;
-    } catch (err) {
-      console.warn("Unable to sync drop file with input", err);
-    }
-  }
-
-  function initDragAndDrop() {
-    const dz = pickDropzone();
-    const fi = pickFileInput();
-    if (!dz || !fi) return;
-
-    on(dz, "click", (e) => {
-      if (e.target === fi) return;
-      e.preventDefault();
-      fi.click();
+  function setDownloadsEnabled(enabled) {
+    const btnIds = ["btn-noissues-json", "btn-noissues-csv", "btn-download-json", "btn-download-csv"];
+    btnIds.forEach((id) => {
+      const btn = $(`#${id}`);
+      if (btn) btn.disabled = !enabled;
     });
-
-    on(dz, "dragover", (e) => {
-      e.preventDefault();
-      dz.classList.add("dragover");
-    });
-    on(dz, "dragleave", () => dz.classList.remove("dragover"));
-    on(dz, "dragend", () => dz.classList.remove("dragover"));
-    on(dz, "drop", (e) => {
-      e.preventDefault();
-      dz.classList.remove("dragover");
-      const f = e.dataTransfer?.files?.[0];
-      if (f) {
-        CURRENT_FILE = f;
-        CURRENT_FILENAME = f.name;
-        syncFileInputWithCurrent(f);
-        updateSelectedFile();
-      }
-    });
-
-    on(fi, "change", (e) => {
-      const f = e.target?.files?.[0];
-      if (f) {
-        CURRENT_FILE = f;
-        CURRENT_FILENAME = f.name;
-        updateSelectedFile();
-      }
-    });
-  }
-
-  function initBrowseButton() {
-    const browseBtn = document.getElementById("btn-browse") || $("[data-browse]");
-    const fi = pickFileInput();
-    if (!browseBtn || !fi) return;
-    on(browseBtn, "click", (e) => {
-      e.preventDefault();
-      fi.click();
-    });
-  }
-
-  // -------------------- spec grid --------------------
-  renderSpecGrid = function () {
-    const specGrid = document.getElementById("spec-grid") || $("[data-spec-grid]");
-    if (!specGrid) return;
-    const fields = Array.isArray(SPEC_FIELDS) ? sortSpecByImportance(SPEC_FIELDS) : [];
-    specGrid.innerHTML = fields
-      .map((field) => {
-        const name = field?.name || "";
-        const importance = (field?.importance || "optional").toLowerCase();
-        const badgeLabel = importance
-          ? importance.charAt(0).toUpperCase() + importance.slice(1)
-          : "";
-        let dependencyText = field?.dependencies;
-        if (Array.isArray(dependencyText)) {
-          dependencyText = dependencyText.join(", ");
-        }
-        if (!dependencyText) {
-          dependencyText = "No additional dependencies.";
-        }
-        const description = field?.description || field?.desc || "";
-        return `
-      <button type="button" class="spec-card"
-        data-field="${escAttr(name)}"
-        data-importance="${escAttr(importance)}">
-        <div class="spec-card__title">${esc(name)}</div>
-        <div class="spec-card__badge badge badge-${escAttr(importance)}">${esc(
-          badgeLabel
-        )}</div>
-        <div class="spec-card__desc">${esc(description)}</div>
-        <div class="spec-card__deps">${esc(dependencyText)}</div>
-      </button>
-    `;
-      })
-      .join("");
-  };
-
-  // -------------------- results table --------------------
-  setDownloadsEnabled = function (enabled) {
-    const ids = [
-      "btn-noissues-json",
-      "btn-noissues-csv",
-      "download-json",
-      "download-csv",
-      "download-tsv",
-    ];
-    ids.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.disabled = !enabled;
-    });
-  };
-
-  function clearIssuesView() {
-    const tbody =
-      document.getElementById("issues-body") ||
-      document.getElementById("results-body") ||
-      $("[data-results-body]");
-    if (tbody) tbody.innerHTML = "";
-    const empty = document.getElementById("no-issues") || $("#empty-noissues");
-    if (empty) empty.classList.remove("hidden");
-    const nores = document.getElementById("no-results");
-    if (nores) nores.classList.remove("hidden");
-    setCountersDisplay(0, 0, 0);
-    setDownloadsEnabled(false);
   }
 
   function renderIssues(issues) {
-    const tbody =
-      document.getElementById("issues-body") ||
-      document.getElementById("results-body") ||
-      $("[data-results-body]");
+    const tbody = $("#issues-body");
     if (!tbody) return;
+    
     tbody.innerHTML = (issues || [])
-      .map((it, i) => {
-        const row = it?.row ?? it?.row_index ?? i + 1;
-        const itemId = it?.item_id || it?.id || "";
-        const field = it?.field || "";
-        const rule = it?.rule || it?.code || it?.rule_id || "";
-        const severity = it?.severity || "";
-        const message = it?.message || "";
-        const value = it?.value || it?.sample_value || "";
+      .map((issue, idx) => {
+        const row = issue?.row_index ?? idx + 1;
+        const itemId = issue?.item_id || "";
+        const field = issue?.field || "";
+        const ruleId = issue?.rule_id || "";
+        const severity = issue?.severity || "";
+        const message = issue?.message || "";
+        const sample = issue?.sample_value || "";
+        
         return `
-        <tr>
-          <td class="col-index">${esc(row)}</td>
-          <td class="col-item">${esc(itemId)}</td>
-          <td>${esc(field)}</td>
-          <td>${esc(rule)}</td>
-          <td>${esc(severity)}</td>
-          <td>${esc(message)}</td>
-          <td>${esc(value)}</td>
-        </tr>`;
+          <tr>
+            <td class="col-index">${esc(row)}</td>
+            <td class="col-item">${esc(itemId)}</td>
+            <td>${esc(field)}</td>
+            <td>${esc(ruleId)}</td>
+            <td class="sev-${esc(severity)}">${esc(severity)}</td>
+            <td>${esc(message)}</td>
+            <td>${esc(sample)}</td>
+          </tr>
+        `;
       })
       .join("");
   }
 
-  function applyValidationResponse(data) {
-    const issues = data?.issues || [];
-    const errorCount =
-      data?.error_count ??
-      data?.summary?.items_with_errors ??
-      issues.filter((i) => i?.severity === "error").length;
-    const warningCount =
-      data?.warning_count ??
-      data?.summary?.items_with_warnings ??
-      issues.filter((i) => i?.severity === "warning").length;
-    const opportunityCount =
-      data?.opportunity_count ??
-      data?.summary?.items_with_opportunities ??
-      issues.filter((i) => i?.severity === "opportunity").length;
-
-    setCountersDisplay(errorCount, warningCount, opportunityCount);
-    renderIssues(issues);
-
-    const empty = document.getElementById("no-issues") || $("#empty-noissues");
-    if (empty) empty.classList.toggle("hidden", issues.length !== 0);
-    const nores = document.getElementById("no-results");
-    if (nores) nores.classList.add("hidden");
-    setDownloadsEnabled(issues.length > 0);
-  }
-
-  function showValidationFailed(reason) {
-    const banner =
-      document.getElementById("validation-failed") || $("[data-fail]");
-    const msg = document.getElementById("validation-failed-msg") || null;
-    if (!banner) return;
-    if (msg) msg.textContent = String(reason || "Validation failed");
-    banner.classList.remove("hidden");
-    setTimeout(() => banner.classList.add("hidden"), 6000);
-  }
-
-  // -------------------- validation submit --------------------
-  function wireValidateButton(button) {
-    if (!button || button.__wired) return;
-    button.__wired = true;
-
-    on(button, "click", (ev) => {
-      ev.preventDefault();
-      doValidate().catch((err) => console.error(err));
-    });
+  function showValidationError(message) {
+    alert(`Validation failed: ${message}`);
   }
 
   async function doValidate() {
-    const fileInput = pickFileInput();
-    const delimiterInput = document.getElementById("delimiter");
-    const encodingInput = document.getElementById("encoding");
+    const fileInput = $("#file-input");
+    const delimiterInput = $("#delimiter");
+    const encodingInput = $("#encoding");
+    const profileSelect = $("#profile-select");
 
-    const selectedFile = fileInput?.files?.[0] || CURRENT_FILE;
-    if (!selectedFile) {
-      console.warn("No file selected");
+    const file = fileInput?.files?.[0] || CURRENT_FILE;
+    if (!file) {
+      alert("Please select a file first");
       return;
     }
 
-    clearIssuesView();
+    clearResults();
 
-    const fd = new FormData();
-    fd.append("file", selectedFile);
-    const encoding = (encodingInput?.value || CURRENT_ENCODING || "utf-8").trim();
-    const delimiter = (delimiterInput?.value || CURRENT_DELIM || "").trim();
-    fd.append("encoding", encoding || "utf-8");
-    fd.append("delimiter", delimiter);
-
-    CURRENT_ENCODING = encoding || "utf-8";
-    CURRENT_DELIM = delimiter;
-
-    const profileSel = document.getElementById("profile-select");
-    if (profileSel) {
-      fd.append("profile", profileSel.value || "general");
-    } else {
-      fd.append("profile", getActiveProfile());
-    }
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("encoding", encodingInput?.value || "utf-8");
+    formData.append("delimiter", delimiterInput?.value || "");
+    formData.append("profile", profileSelect?.value || "general");
 
     try {
-      const res = await fetch("/validate/file", { method: "POST", body: fd });
-      if (!res.ok) {
-        const txt = await res.text();
-        console.error("Validate failed:", res.status, txt);
-        showValidationFailed(txt || `HTTP ${res.status}`);
-        return;
+      const response = await fetch("/validate/file", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `HTTP ${response.status}`);
       }
-      const data = await res.json();
-      applyValidationResponse(data);
+
+      const data = await response.json();
+      
+      // Process results
+      const issues = data?.issues || [];
+      const summary = data?.summary || {};
+      
+      const errorCount = summary.items_with_errors || 0;
+      const warningCount = summary.items_with_warnings || 0;
+      const oppCount = summary.items_with_opportunities || 0;
+
+      setCountersDisplay(errorCount, warningCount, oppCount);
+      renderIssues(issues);
+
+      const noIssues = $("#no-issues");
+      const noResults = $("#no-results");
+      
+      if (issues.length === 0) {
+        if (noIssues) noIssues.classList.remove("hidden");
+        if (noResults) noResults.classList.add("hidden");
+      } else {
+        if (noIssues) noIssues.classList.add("hidden");
+        if (noResults) noResults.classList.add("hidden");
+      }
+
+      setDownloadsEnabled(true);
+      
+      console.log("Validation complete:", {
+        total: summary.items_total,
+        errors: errorCount,
+        warnings: warningCount,
+        opportunities: oppCount
+      });
+
     } catch (err) {
       console.error("Validation error:", err);
-      showValidationFailed(
-        String(err && err.message ? err.message : err || "Validation failed")
-      );
+      showValidationError(err.message);
     }
   }
 
   function initValidate() {
-    wireValidateButton(document.getElementById("btn-validate-file"));
-    wireValidateButton(document.getElementById("btn-validate"));
+    const validateBtn = $("#btn-validate-file");
+    if (validateBtn) {
+      on(validateBtn, "click", (e) => {
+        e.preventDefault();
+        doValidate();
+      });
+    }
   }
 
-  // -------------------- profile selector --------------------
+  // -------------------- Profile Selector --------------------
   function initProfileSelector() {
-    const sel =
-      document.getElementById("profile-select") ||
-      $("[data-profile-select]") ||
-      $("[name='profile']");
-    if (!sel) return;
+    const profileSelect = $("#profile-select");
+    if (!profileSelect) return;
 
-    on(sel, "change", () => {
-      ACTIVE_PROFILE = getActiveProfile();
-      loadSpec(ACTIVE_PROFILE)
-        .then(() => {
-          renderSpecGrid();
-          updateChipCounts();
-        })
-        .catch((e) => console.error("Spec reload failed:", e));
+    on(profileSelect, "change", async () => {
+      ACTIVE_PROFILE = profileSelect.value || "general";
+      await loadSpec(ACTIVE_PROFILE);
+      renderSpecGrid();
     });
   }
 
-  // -------------------- footer year (optional) --------------------
+  // -------------------- Footer Year --------------------
   function initYear() {
-    const y = document.getElementById("year") || $("[data-year]");
-    if (y) y.textContent = String(new Date().getFullYear());
+    const yearEl = $("#year");
+    if (yearEl) yearEl.textContent = String(new Date().getFullYear());
   }
 
-  function initNoResultState() {
-    const nores = document.getElementById("no-results");
-    const empty = document.getElementById("no-issues") || $("#empty-noissues");
-    if (nores) nores.classList.remove("hidden");
-    if (empty) empty.classList.add("hidden");
-  }
-
-  function boot() {
+  // -------------------- Main Initialization --------------------
+  async function init() {
+    console.log("Initializing app...");
+    
     initYear();
     initTabs();
     initProfileSelector();
     initDragAndDrop();
+    initBrowseButton();
     initValidate();
-    initNoResultState();
     updateSelectedFile();
     setDownloadsEnabled(false);
-    updateChipCounts();
 
-    loadSpec(getActiveProfile())
-      .then(() => {
-        renderSpecGrid();
-        updateChipCounts();
-      })
-      .catch((e) => console.error("Initial spec load failed:", e));
+    // Load initial spec
+    await loadSpec("general");
+    renderSpecGrid();
+    
+    console.log("App initialized successfully");
   }
 
-  if (document.readyState === "complete" || document.readyState === "interactive") {
-    boot();
+  // Run when DOM is ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
   } else {
-    on(document, "DOMContentLoaded", boot);
-  }
-
-  if (typeof window !== "undefined" && typeof window.__appBootstrap === "function") {
-    window.__appBootstrap();
+    init();
   }
 })();
