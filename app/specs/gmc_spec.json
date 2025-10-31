@@ -1,402 +1,80 @@
 {
   "profiles": {
     "general": [
-      {
-        "name": "id",
-        "status": "required",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Unique product ID."
-      },
-      {
-        "name": "title",
-        "status": "required",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Product title."
-      },
-      {
-        "name": "description",
-        "status": "required",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Plain-text description."
-      },
-      {
-        "name": "link",
-        "status": "required",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Canonical product URL (https)."
-      },
-      {
-        "name": "image_link",
-        "status": "required",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Main image URL (https)."
-      },
-      {
-        "name": "availability",
-        "status": "required",
-        "profiles": [
-          "general"
-        ],
-        "desc": "in_stock/out_of_stock/preorder/backorder."
-      },
-      {
-        "name": "price",
-        "status": "required",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Price as '<amount> <ISO4217>' e.g. '15.00 USD'."
-      },
-      {
-        "name": "brand",
-        "status": "conditional",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Required if gtin is missing."
-      },
-      {
-        "name": "mpn",
-        "status": "conditional",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Required with brand if gtin is missing."
-      },
-      {
-        "name": "gtin",
-        "status": "recommended",
-        "profiles": [
-          "general"
-        ],
-        "desc": "GS1 GTIN with valid checksum."
-      },
-      {
-        "name": "google_product_category",
-        "status": "recommended",
-        "profiles": [
-          "general"
-        ],
-        "desc": "GMC taxonomy string or ID."
-      },
-      {
-        "name": "condition",
-        "status": "recommended",
-        "profiles": [
-          "general"
-        ],
-        "desc": "new/refurbished/used."
-      },
-      {
-        "name": "sale_price",
-        "status": "optional",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Sale price '<amount> <ISO4217>'."
-      },
-      {
-        "name": "sale_price_effective_date",
-        "status": "optional",
-        "profiles": [
-          "general"
-        ],
-        "desc": "ISO date or date range."
-      },
-      {
-        "name": "availability_date",
-        "status": "conditional",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Required if availability=preorder."
-      },
-      {
-        "name": "additional_image_link",
-        "status": "optional",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Additional image URLs; comma or pipe separated."
-      },
-      {
-        "name": "shipping",
-        "status": "optional",
-        "profiles": [
-          "general"
-        ],
-        "desc": "Country:service:price triplets or feed-level policy."
-      },
-      {
-        "name": "unit_pricing_measure",
-        "status": "optional",
-        "profiles": [
-          "general"
-        ],
-        "desc": "e.g. 100ml, 1kg."
-      },
-      {
-        "name": "unit_pricing_base_measure",
-        "status": "optional",
-        "profiles": [
-          "general"
-        ],
-        "desc": "e.g. 100ml."
-      },
-      {
-        "name": "identifier_exists",
-        "status": "optional",
-        "profiles": [
-          "general"
-        ],
-        "desc": "true/false to indicate absence of brand+mpn+gtin."
-      }
+      { "name": "id", "status": "required", "profiles": ["general"], "desc": "Stable, unique product ID. Alphanumeric with . _ - only; ≤ 100 chars." },
+      { "name": "title", "status": "required", "profiles": ["general"], "desc": "Product title as merchandised. Aim ≤ 150 chars; avoid ALL CAPS." },
+      { "name": "description", "status": "required", "profiles": ["general"], "desc": "Plain-text product description. No HTML; ≤ 5,000 chars." },
+      { "name": "link", "status": "required", "profiles": ["general"], "desc": "Canonical product URL (https)." },
+      { "name": "image_link", "status": "required", "profiles": ["general"], "desc": "Main product image URL (https). Show the single product clearly." },
+      { "name": "availability", "status": "required", "profiles": ["general"], "desc": "in_stock | out_of_stock | preorder | backorder." },
+      { "name": "price", "status": "required", "profiles": ["general"], "desc": "Price as '<amount> <ISO4217>' (e.g., '15.00 USD')." },
+
+      { "name": "brand", "status": "conditional", "profiles": ["general"], "desc": "Required if GTIN is missing. Combine with mpn." },
+      { "name": "mpn", "status": "conditional", "profiles": ["general"], "desc": "Required with brand if GTIN is missing." },
+      { "name": "availability_date", "status": "conditional", "profiles": ["general"], "desc": "Required when availability=preorder. ISO 8601 date." },
+
+      { "name": "gtin", "status": "recommended", "profiles": ["general"], "desc": "GS1 GTIN with valid checksum (EAN-13/UPC-A/GTIN-14/…)." },
+      { "name": "google_product_category", "status": "recommended", "profiles": ["general"], "desc": "Google taxonomy ID or full path (e.g., 187 or 'Apparel & Accessories > Clothing')." },
+      { "name": "condition", "status": "recommended", "profiles": ["general"], "desc": "new | refurbished | used." },
+
+      { "name": "sale_price", "status": "optional", "profiles": ["general"], "desc": "Promotional price '<amount> <ISO4217>' (must be ≤ price)." },
+      { "name": "sale_price_effective_date", "status": "optional", "profiles": ["general"], "desc": "Date/time window for sale price (ISO 8601 or 'YYYY-MM-DD / YYYY-MM-DD')." },
+      { "name": "additional_image_link", "status": "optional", "profiles": ["general"], "desc": "Extra images; comma or pipe separated list of URLs." },
+      { "name": "mobile_link", "status": "optional", "profiles": ["general"], "desc": "Mobile-optimized product URL (https) if different from link." },
+      { "name": "unit_pricing_measure", "status": "optional", "profiles": ["general"], "desc": "Net content for unit pricing, e.g., '100 ml', '1 kg'." },
+      { "name": "unit_pricing_base_measure", "status": "optional", "profiles": ["general"], "desc": "Reference measure for unit pricing, e.g., '100 ml'." },
+      { "name": "identifier_exists", "status": "optional", "profiles": ["general"], "desc": "true/false. Set false only when brand+mpn+gtin genuinely unavailable." },
+      { "name": "shipping", "status": "optional", "profiles": ["general"], "desc": "Overrides for shipping charges; e.g., 'US:Standard:5.00 USD'. Account-level settings may also apply." },
+      { "name": "tax", "status": "optional", "profiles": ["general"], "desc": "US tax rules when not handled at account level (e.g., 'US:MI:6.0')." },
+      { "name": "multipack", "status": "optional", "profiles": ["general"], "desc": "Number of identical products in the multipack (integer ≥ 2)." },
+      { "name": "adult", "status": "optional", "profiles": ["general"], "desc": "true/false. Mark adult-oriented items appropriately." },
+      { "name": "material", "status": "optional", "profiles": ["general"], "desc": "Material or composition (e.g., 'Stainless steel')." },
+      { "name": "pattern", "status": "optional", "profiles": ["general"], "desc": "Pattern or graphic (e.g., 'Striped')." }
     ],
+
     "apparel": [
-      {
-        "name": "id",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Unique variant ID."
-      },
-      {
-        "name": "title",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Variant title."
-      },
-      {
-        "name": "description",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Variant description."
-      },
-      {
-        "name": "link",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Variant URL (https)."
-      },
-      {
-        "name": "image_link",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Main image URL (https)."
-      },
-      {
-        "name": "availability",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "in_stock/out_of_stock/preorder/backorder."
-      },
-      {
-        "name": "price",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "'<amount> <ISO4217>'."
-      },
-      {
-        "name": "brand",
-        "status": "conditional",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Required if gtin is missing."
-      },
-      {
-        "name": "mpn",
-        "status": "conditional",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Required with brand if gtin is missing."
-      },
-      {
-        "name": "gtin",
-        "status": "recommended",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "GS1 GTIN with valid checksum."
-      },
-      {
-        "name": "item_group_id",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Groups variants."
-      },
-      {
-        "name": "gender",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "male/female/unisex."
-      },
-      {
-        "name": "age_group",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "newborn/infant/toddler/kids/adult."
-      },
-      {
-        "name": "color",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Variant color."
-      },
-      {
-        "name": "size",
-        "status": "required",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Variant size value."
-      },
-      {
-        "name": "size_system",
-        "status": "recommended",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "US/UK/EU/DE/FR/JP/.."
-      },
-      {
-        "name": "size_type",
-        "status": "optional",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "regular/petite/plus/maternity/big_and_tall."
-      },
-      {
-        "name": "material",
-        "status": "optional",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Fabric/material."
-      },
-      {
-        "name": "pattern",
-        "status": "optional",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "Pattern."
-      },
-      {
-        "name": "google_product_category",
-        "status": "recommended",
-        "profiles": [
-          "apparel"
-        ],
-        "desc": "GMC taxonomy string or ID."
-      }
+      { "name": "id", "status": "required", "profiles": ["apparel"], "desc": "Variant ID (unique per color/size variant)." },
+      { "name": "title", "status": "required", "profiles": ["apparel"], "desc": "Variant title. Include key attributes (color/fit) when helpful." },
+      { "name": "description", "status": "required", "profiles": ["apparel"], "desc": "Plain-text description of the variant. No HTML." },
+      { "name": "link", "status": "required", "profiles": ["apparel"], "desc": "Variant product URL (https)." },
+      { "name": "image_link", "status": "required", "profiles": ["apparel"], "desc": "Variant’s main image URL (https)." },
+      { "name": "availability", "status": "required", "profiles": ["apparel"], "desc": "in_stock | out_of_stock | preorder | backorder." },
+      { "name": "price", "status": "required", "profiles": ["apparel"], "desc": "Variant price '<amount> <ISO4217>'." },
+
+      { "name": "item_group_id", "status": "required", "profiles": ["apparel"], "desc": "Groups color/size variants under one parent." },
+      { "name": "gender", "status": "required", "profiles": ["apparel"], "desc": "male | female | unisex." },
+      { "name": "age_group", "status": "required", "profiles": ["apparel"], "desc": "newborn | infant | toddler | kids | adult." },
+      { "name": "color", "status": "required", "profiles": ["apparel"], "desc": "Primary color value (e.g., 'Red')." },
+      { "name": "size", "status": "required", "profiles": ["apparel"], "desc": "Variant size (e.g., 'S', '32x32')." },
+
+      { "name": "brand", "status": "conditional", "profiles": ["apparel"], "desc": "Required if GTIN is missing. Combine with mpn." },
+      { "name": "mpn", "status": "conditional", "profiles": ["apparel"], "desc": "Required with brand if GTIN is missing." },
+      { "name": "availability_date", "status": "conditional", "profiles": ["apparel"], "desc": "Required when availability=preorder (ISO date)." },
+
+      { "name": "gtin", "status": "recommended", "profiles": ["apparel"], "desc": "Variant-level GTIN with valid GS1 checksum." },
+      { "name": "google_product_category", "status": "recommended", "profiles": ["apparel"], "desc": "GMC taxonomy ID or path (e.g., 1604 or 'Apparel & Accessories > Clothing > Shirts')." },
+      { "name": "size_system", "status": "recommended", "profiles": ["apparel"], "desc": "Sizing system: US, UK, EU, DE, FR, JP, …" },
+
+      { "name": "size_type", "status": "optional", "profiles": ["apparel"], "desc": "regular | petite | plus | maternity | big_and_tall." },
+      { "name": "material", "status": "optional", "profiles": ["apparel"], "desc": "Fabric or composition (e.g., '100% cotton')." },
+      { "name": "pattern", "status": "optional", "profiles": ["apparel"], "desc": "Pattern/graphic (e.g., 'plaid')." },
+      { "name": "additional_image_link", "status": "optional", "profiles": ["apparel"], "desc": "Extra angles or on-model images; comma/pipe separated URLs." },
+      { "name": "sale_price", "status": "optional", "profiles": ["apparel"], "desc": "Variant sale price '<amount> <ISO4217>'." },
+      { "name": "sale_price_effective_date", "status": "optional", "profiles": ["apparel"], "desc": "When sale price applies (ISO 8601 or date range)." }
     ],
+
     "local_inventory": [
-      {
-        "name": "store_code",
-        "status": "required",
-        "profiles": [
-          "local_inventory"
-        ],
-        "desc": "GMC store code."
-      },
-      {
-        "name": "id",
-        "status": "required",
-        "profiles": [
-          "local_inventory"
-        ],
-        "desc": "Matching the primary feed's id."
-      },
-      {
-        "name": "price",
-        "status": "required",
-        "profiles": [
-          "local_inventory"
-        ],
-        "desc": "'<amount> <ISO4217>'."
-      },
-      {
-        "name": "availability",
-        "status": "required",
-        "profiles": [
-          "local_inventory"
-        ],
-        "desc": "in_stock/out_of_stock/preorder/backorder."
-      },
-      {
-        "name": "quantity",
-        "status": "recommended",
-        "profiles": [
-          "local_inventory"
-        ],
-        "desc": "On-hand quantity."
-      },
-      {
-        "name": "pickup_method",
-        "status": "optional",
-        "profiles": [
-          "local_inventory"
-        ],
-        "desc": "in_store/reserve/not_supported."
-      },
-      {
-        "name": "pickup_sla",
-        "status": "optional",
-        "profiles": [
-          "local_inventory"
-        ],
-        "desc": "same_day/next_day/.."
-      },
-      {
-        "name": "sale_price",
-        "status": "optional",
-        "profiles": [
-          "local_inventory"
-        ],
-        "desc": "Location-level sale price."
-      },
-      {
-        "name": "sale_price_effective_date",
-        "status": "optional",
-        "profiles": [
-          "local_inventory"
-        ],
-        "desc": "ISO date or date range."
-      }
+      { "name": "store_code", "status": "required", "profiles": ["local_inventory"], "desc": "GMC store code matching your Business Profile location." },
+      { "name": "id", "status": "required", "profiles": ["local_inventory"], "desc": "Product ID (must match the primary feed’s id)." },
+      { "name": "price", "status": "required", "profiles": ["local_inventory"], "desc": "Store-level price '<amount> <ISO4217>'." },
+      { "name": "availability", "status": "required", "profiles": ["local_inventory"], "desc": "in_stock | out_of_stock | preorder | backorder." },
+
+      { "name": "quantity", "status": "recommended", "profiles": ["local_inventory"], "desc": "On-hand quantity at this store (integer)." },
+
+      { "name": "pickup_method", "status": "optional", "profiles": ["local_inventory"], "desc": "in_store | reserve | not_supported." },
+      { "name": "pickup_sla", "status": "optional", "profiles": ["local_inventory"], "desc": "Fulfillment speed (e.g., 'same_day', 'next_day')." },
+      { "name": "sale_price", "status": "optional", "profiles": ["local_inventory"], "desc": "Store-level sale price '<amount> <ISO4217>'." },
+      { "name": "sale_price_effective_date", "status": "optional", "profiles": ["local_inventory"], "desc": "ISO date/time or date range when sale applies." }
     ]
   }
 }
