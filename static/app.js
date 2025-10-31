@@ -5,6 +5,51 @@
    - Sorts Spec cards in-memory (Required → Conditional → Recommended → Optional → name)
    - Robust tab + drag/drop wiring with conservative fallbacks (NO DOM/CSS changes) */
 
+if (typeof SPEC_FIELDS === "undefined") {
+  var SPEC_FIELDS = [];
+}
+
+var renderSpecGrid;
+var updateChipCounts;
+var initSpecFilterKeyboard;
+var initCopyButtons;
+var updateSelectedFile;
+var setDownloadsEnabled;
+var showTab;
+
+// Safe bootstrap without top-level await
+(function () {
+  function safe(fn) {
+    try {
+      fn && fn();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function bootstrap() {
+    safe(renderSpecGrid);
+    safe(updateChipCounts);
+    safe(initSpecFilterKeyboard);
+    safe(initCopyButtons);
+    safe(updateSelectedFile);
+    safe(typeof setDownloadsEnabled === "function" ? setDownloadsEnabled.bind(null, false) : null);
+    if (typeof showTab === "function") {
+      showTab("validate");
+    }
+  }
+
+  if (typeof window !== "undefined") {
+    window.__appBootstrap = bootstrap;
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootstrap, { once: true });
+  } else {
+    bootstrap();
+  }
+})();
+
 (function () {
   "use strict";
 
@@ -22,7 +67,6 @@
   const escAttr = esc;
 
   // -------------------- state --------------------
-  let SPEC_FIELDS = [];
   let ACTIVE_PROFILE = "general";
   let CURRENT_FILE = null;
   let CURRENT_FILENAME = "";
@@ -40,15 +84,14 @@
   function sortSpecByImportance(fields) {
     const order = { required: 0, conditional: 1, recommended: 2, optional: 3 };
     return [...fields].sort((a, b) => {
-      const ia = order[a.importance] ?? 99;
-      const ib = order[b.importance] ?? 99;
+      const ia = order[(a && a.importance) || "optional"] ?? 99;
+      const ib = order[(b && b.importance) || "optional"] ?? 99;
       if (ia !== ib) return ia - ib;
-      return (a.name || "").localeCompare(b.name || "");
+      return (a?.name || "").localeCompare(b?.name || "");
     });
   }
 
   function getActiveProfile() {
-    // prefer explicit selector if your DOM has it
     const sel =
       $("#profile-select") ||
       $("[data-profile-select]") ||
@@ -61,7 +104,6 @@
   function showTabId(panelId) {
     if (!panelId) return;
 
-    // ARIA pattern
     const tabs = $$("[role='tab']");
     const panels = $$("[role='tabpanel']");
 
@@ -70,28 +112,30 @@
       panels.forEach((p) => p.setAttribute("hidden", "true"));
       if (targetPanel) targetPanel.removeAttribute("hidden");
 
-      // find tab that controls this panel
       const tab = tabs.find((t) => t.getAttribute("aria-controls") === panelId);
       tabs.forEach((t) => t.setAttribute("aria-selected", "false"));
       if (tab) tab.setAttribute("aria-selected", "true");
       return;
     }
 
-    // fallback to #panel-*
     const panel = document.getElementById(panelId) || $(`#${panelId}`);
     const allPanels = $$("[id^='panel-']");
     allPanels.forEach((p) => p.classList.add("hidden"));
     if (panel) panel.classList.remove("hidden");
 
-    // fallback tabs by id convention
     const allTabs = $$("[id^='tab-']");
     allTabs.forEach((t) => t.setAttribute("aria-selected", "false"));
     const inferredTab = document.getElementById(panelId.replace("panel-", "tab-"));
     if (inferredTab) inferredTab.setAttribute("aria-selected", "true");
   }
 
+  showTab = function (name) {
+    if (!name) return;
+    const panelId = name === "spec" ? "panel-spec" : "panel-validate";
+    showTabId(panelId);
+  };
+
   function initTabs() {
-    // Delegate clicks for role="tab"
     on(document, "click", (e) => {
       const t = e.target.closest("[role='tab']");
       if (!t) return;
@@ -101,44 +145,56 @@
       showTabId(controls);
     });
 
-    // Fallback: support id convention tab-validate/tab-spec
     const tabValidate =
       $("#tab-validate") || $("[data-tab='validate']") || null;
     const tabSpec = $("#tab-spec") || $("[data-tab='spec']") || null;
 
     on(tabValidate, "click", (e) => {
       e.preventDefault();
-      showTabId("panel-validate");
+      showTab("validate");
     });
     on(tabSpec, "click", (e) => {
       e.preventDefault();
-      showTabId("panel-spec");
+      showTab("spec");
     });
 
-    // Default view
-    // If an ARIA tab is already selected, respect it; else show validate.
     const selected = $("[role='tab'][aria-selected='true']");
     if (selected && selected.getAttribute("aria-controls")) {
       showTabId(selected.getAttribute("aria-controls"));
-    } else {
-      // fallback default
-      if (document.getElementById("panel-validate")) showTabId("panel-validate");
+    } else if (document.getElementById("panel-validate")) {
+      showTab("validate");
     }
   }
 
   // -------------------- counters --------------------
-  function setCounters({ errors = 0, warnings = 0, opportunities = 0 }) {
-    const ce = $("#count-errors");
-    const cw = $("#count-warnings");
-    const co = $("#count-opportunities");
-    if (ce) ce.textContent = String(errors);
-    if (cw) cw.textContent = String(warnings);
-    if (co) co.textContent = String(opportunities);
+  function setCountersDisplay(errors, warnings, opportunities) {
+    const total = (errors || 0) + (warnings || 0) + (opportunities || 0);
+    const mapIds = [
+      ["counter-errors", errors],
+      ["counter-warnings", warnings],
+      ["counter-opportunities", opportunities],
+      ["count-errors", errors],
+      ["count-warnings", warnings],
+      ["count-opportunities", opportunities],
+      ["count-all", total],
+    ];
+    mapIds.forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = String(value ?? 0);
+    });
   }
 
-  function updateChipCounts() {
+  updateChipCounts = function () {
     // preserve your existing chip behavior if present
-  }
+  };
+
+  initSpecFilterKeyboard = function () {
+    // placeholder to keep existing keyboard shortcuts alive if defined elsewhere
+  };
+
+  initCopyButtons = function () {
+    // placeholder to keep existing copy interactions alive if defined elsewhere
+  };
 
   // -------------------- drag & drop (robust, zero DOM changes) --------------------
   function pickDropzone() {
@@ -155,17 +211,28 @@
     return (
       document.getElementById("file-input") ||
       $("input[type='file'][data-file-input]") ||
-      $("input[type='file']") // last resort; assumes only one file input
+      $("input[type='file']")
     );
   }
 
-  function updateSelectedFile() {
+  updateSelectedFile = function () {
     const el =
       document.getElementById("selected-file") ||
       $("[data-selected-file]") ||
       $("#file-label");
-    if (!el) return;
-    el.textContent = CURRENT_FILENAME ? CURRENT_FILENAME : "No file selected";
+    if (el) el.textContent = CURRENT_FILENAME ? CURRENT_FILENAME : "No file selected";
+  };
+
+  function syncFileInputWithCurrent(file) {
+    const input = pickFileInput();
+    if (!input || !file) return;
+    try {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+    } catch (err) {
+      console.warn("Unable to sync drop file with input", err);
+    }
   }
 
   function initDragAndDrop() {
@@ -185,6 +252,7 @@
       if (f) {
         CURRENT_FILE = f;
         CURRENT_FILENAME = f.name;
+        syncFileInputWithCurrent(f);
         updateSelectedFile();
       }
     });
@@ -200,158 +268,127 @@
   }
 
   // -------------------- spec grid --------------------
-  function renderSpecGrid() {
-    const specGrid =
-      document.getElementById("spec-grid") || $("[data-spec-grid]");
+  renderSpecGrid = function () {
+    const specGrid = document.getElementById("spec-grid") || $("[data-spec-grid]");
     if (!specGrid) return;
-
-    const fields = sortSpecByImportance(SPEC_FIELDS);
-
+    const fields = Array.isArray(SPEC_FIELDS) ? sortSpecByImportance(SPEC_FIELDS) : [];
     specGrid.innerHTML = fields
       .map((field) => {
-        const badge = (field.importance || "").toLowerCase();
-        const badgeLabel = badge
-          ? badge.charAt(0).toUpperCase() + badge.slice(1)
+        const name = field?.name || "";
+        const importance = (field?.importance || "optional").toLowerCase();
+        const badgeLabel = importance
+          ? importance.charAt(0).toUpperCase() + importance.slice(1)
           : "";
+        let badgeClass = importance;
+        if (!badgeClass || ["required", "recommended", "conditional"].indexOf(badgeClass) === -1) {
+          badgeClass = "recommended";
+        }
+        let dependencyText = field?.dependencies;
+        if (Array.isArray(dependencyText)) {
+          dependencyText = dependencyText.join(", ");
+        }
+        if (!dependencyText) {
+          dependencyText = "No additional dependencies.";
+        }
+        const description = field?.description || field?.desc || "";
         return `
-<button type="button" class="spec-card" data-field="${escAttr(
-          field.name
-        )}" data-importance="${escAttr(field.importance)}">
-  <div class="spec-card__head">
-    <span class="badge badge--${escAttr(badge)}">${esc(badgeLabel)}</span>
-  </div>
-  <div class="spec-card__body">
-    <h4>${esc(field.name)}</h4>
-    <p>${esc(field.description || "")}</p>
-    <div class="muted">—</div>
-  </div>
+<button type="button" class="spec-card" data-field="${escAttr(name)}" data-importance="${escAttr(importance)}">
+  <div class="badge ${escAttr(badgeClass)}">${esc(badgeLabel)}</div>
+  <div class="field-name">${esc(name)}</div>
+  <p class="field-desc">${esc(description)}</p>
+  <div class="dependencies">${esc(dependencyText)}</div>
 </button>`;
       })
       .join("");
-  }
+  };
 
   // -------------------- results table --------------------
-  function clearResults() {
-    const tb =
-      document.getElementById("results-body") || $("[data-results-body]");
-    const empty =
-      document.getElementById("empty-noissues") || $("[data-empty]");
-    if (tb) tb.innerHTML = "";
-    if (empty) empty.classList.add("hidden");
-    setCounters({ errors: 0, warnings: 0, opportunities: 0 });
+  setDownloadsEnabled = function (enabled) {
+    const ids = [
+      "btn-noissues-json",
+      "btn-noissues-csv",
+      "btn-download-json",
+      "btn-download-csv",
+      "download-json",
+      "download-csv",
+      "download-tsv",
+    ];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = !enabled;
+    });
+  };
+
+  function clearIssuesView() {
+    const tbody =
+      document.getElementById("issues-body") ||
+      document.getElementById("results-body") ||
+      $("[data-results-body]");
+    if (tbody) tbody.innerHTML = "";
+    const empty = document.getElementById("no-issues") || $("#empty-noissues");
+    if (empty) empty.classList.remove("hidden");
+    const nores = document.getElementById("no-results");
+    if (nores) nores.classList.remove("hidden");
+    setCountersDisplay(0, 0, 0);
     setDownloadsEnabled(false);
   }
 
-  function setDownloadsEnabled(enabled) {
-    const a = document.getElementById("btn-noissues-json");
-    const b = document.getElementById("btn-noissues-csv");
-    if (a) a.disabled = !enabled;
-    if (b) b.disabled = !enabled;
-  }
-
-  function renderResults(payload) {
-    const issues = payload?.issues || [];
-    const summary = payload?.summary || null;
-
-    let errors = 0,
-      warnings = 0,
-      opportunities = 0;
-
-    if (summary) {
-      errors = Number(summary.items_with_errors || 0);
-      warnings = Number(summary.items_with_warnings || 0);
-      opportunities = Number(summary.items_with_opportunities || 0);
-    } else {
-      for (const it of issues) {
-        if (it.severity === "error") errors++;
-        else if (it.severity === "warning") warnings++;
-        else if (it.severity === "opportunity") opportunities++;
-      }
-    }
-
-    setCounters({ errors, warnings, opportunities });
-
-    const tb =
-      document.getElementById("results-body") || $("[data-results-body]");
-    const empty =
-      document.getElementById("empty-noissues") || $("[data-empty]");
-
-    if (!tb) return;
-
-    if (!issues.length) {
-      if (empty) empty.classList.remove("hidden");
-      setDownloadsEnabled(false);
-      return;
-    }
-
-    const rows = issues
-      .map((it) => {
-        const r = it.row_index == null ? "" : String(it.row_index);
-        const id = it.item_id || "";
-        const field = it.field || "";
-        const sev = it.severity || "";
-        const msg = it.message || "";
-        const sample = it.sample_value || "";
+  function renderIssues(issues) {
+    const tbody =
+      document.getElementById("issues-body") ||
+      document.getElementById("results-body") ||
+      $("[data-results-body]");
+    if (!tbody) return;
+    tbody.innerHTML = (issues || [])
+      .map((it, i) => {
+        const row = it?.row ?? it?.row_index ?? i + 1;
+        const itemId = it?.item_id || it?.id || "";
+        const field = it?.field || "";
+        const rule = it?.rule || it?.code || it?.rule_id || "";
+        const severityRaw = it?.severity || "";
+        const severity = severityRaw.toLowerCase();
+        const message = it?.message || "";
+        const value = it?.value || it?.sample_value || "";
+        const sevClass = severity ? `sev-${escAttr(severity)}` : "";
         return `
-<tr class="issue-row issue-${escAttr(sev)}">
-  <td class="col-row">${esc(r)}</td>
-  <td class="col-id">${esc(id)}</td>
-  <td class="col-field">${esc(field)}</td>
-  <td class="col-sev">${esc(sev)}</td>
-  <td class="col-msg">${esc(msg)}</td>
-  <td class="col-sample">${esc(sample)}</td>
+<tr class="issue-row ${sevClass}">
+  <td class="col-index" data-label="#">${esc(row)}</td>
+  <td class="col-item" data-label="Item ID">${esc(itemId)}</td>
+  <td data-label="Field">${esc(field)}</td>
+  <td class="rule-id" data-label="Rule">${esc(rule)}</td>
+  <td class="${sevClass}" data-label="Severity">${esc(severityRaw)}</td>
+  <td data-label="Message">${esc(message)}</td>
+  <td class="sample-cell" data-label="Sample"><div class="sample-value">${esc(value)}</div></td>
 </tr>`;
       })
       .join("");
-
-    tb.innerHTML = rows;
-    setDownloadsEnabled(true);
   }
 
-  // -------------------- validation submit --------------------
-  function initValidate() {
-    const btn =
-      document.getElementById("btn-validate") || $("[data-validate]");
-    if (!btn) return;
+  function applyValidationResponse(data) {
+    const issues = data?.issues || [];
+    const errorCount =
+      data?.error_count ??
+      data?.summary?.items_with_errors ??
+      issues.filter((i) => i?.severity === "error").length;
+    const warningCount =
+      data?.warning_count ??
+      data?.summary?.items_with_warnings ??
+      issues.filter((i) => i?.severity === "warning").length;
+    const opportunityCount =
+      data?.opportunity_count ??
+      data?.summary?.items_with_opportunities ??
+      issues.filter((i) => i?.severity === "opportunity").length;
 
-    on(btn, "click", async (e) => {
-      e.preventDefault();
-      if (!CURRENT_FILE) {
-        clearResults();
-        return;
-      }
-      clearResults();
+    setCountersDisplay(errorCount, warningCount, opportunityCount);
+    renderIssues(issues);
 
-      const encoding =
-        document.getElementById("encoding") ||
-        $("[data-encoding]") || { value: "utf-8" };
-      const delimiter =
-        document.getElementById("delimiter") ||
-        $("[data-delimiter]") || { value: "" };
-
-      const fd = new FormData();
-      fd.append("file", CURRENT_FILE);
-      fd.append("encoding", String(encoding.value || "utf-8").trim());
-      fd.append("delimiter", String(delimiter.value || "").trim());
-      fd.append("profile", getActiveProfile());
-
-      try {
-        const res = await fetch("/validate/file", { method: "POST", body: fd });
-        if (!res.ok) {
-          const txt = await res.text();
-          console.error("Validation failed:", res.status, txt);
-          showValidationFailed(txt || `HTTP ${res.status}`);
-          return;
-        }
-        const payload = await res.json();
-        renderResults(payload);
-      } catch (err) {
-        console.error("Validation error:", err);
-        showValidationFailed(
-          String(err && err.message ? err.message : err || "Validation failed")
-        );
-      }
-    });
+    const results = document.getElementById("results");
+    if (results) results.classList.remove("hidden");
+    const empty = document.getElementById("no-issues") || $("#empty-noissues");
+    if (empty) empty.classList.toggle("hidden", issues.length !== 0);
+    const nores = document.getElementById("no-results");
+    if (nores) nores.classList.add("hidden");
+    setDownloadsEnabled(issues.length > 0);
   }
 
   function showValidationFailed(reason) {
@@ -362,6 +399,70 @@
     if (msg) msg.textContent = String(reason || "Validation failed");
     banner.classList.remove("hidden");
     setTimeout(() => banner.classList.add("hidden"), 6000);
+  }
+
+  // -------------------- validation submit --------------------
+  function wireValidateButton(button) {
+    if (!button || button.__wired) return;
+    button.__wired = true;
+
+    on(button, "click", (ev) => {
+      ev.preventDefault();
+      doValidate().catch((err) => console.error(err));
+    });
+  }
+
+  async function doValidate() {
+    const fileInput = pickFileInput();
+    const delimiterInput = document.getElementById("delimiter");
+    const encodingInput = document.getElementById("encoding");
+
+    const selectedFile = fileInput?.files?.[0] || CURRENT_FILE;
+    if (!selectedFile) {
+      console.warn("No file selected");
+      return;
+    }
+
+    clearIssuesView();
+
+    const fd = new FormData();
+    fd.append("file", selectedFile);
+    const encoding = (encodingInput?.value || CURRENT_ENCODING || "utf-8").trim();
+    const delimiter = (delimiterInput?.value || CURRENT_DELIM || "").trim();
+    fd.append("encoding", encoding || "utf-8");
+    fd.append("delimiter", delimiter);
+
+    CURRENT_ENCODING = encoding || "utf-8";
+    CURRENT_DELIM = delimiter;
+
+    const profileSel = document.getElementById("profile-select");
+    if (profileSel) {
+      fd.append("profile", profileSel.value || "general");
+    } else {
+      fd.append("profile", getActiveProfile());
+    }
+
+    try {
+      const res = await fetch("/validate/file", { method: "POST", body: fd });
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error("Validate failed:", res.status, txt);
+        showValidationFailed(txt || `HTTP ${res.status}`);
+        return;
+      }
+      const data = await res.json();
+      applyValidationResponse(data);
+    } catch (err) {
+      console.error("Validation error:", err);
+      showValidationFailed(
+        String(err && err.message ? err.message : err || "Validation failed")
+      );
+    }
+  }
+
+  function initValidate() {
+    wireValidateButton(document.getElementById("btn-validate-file"));
+    wireValidateButton(document.getElementById("btn-validate"));
   }
 
   // -------------------- profile selector --------------------
@@ -389,12 +490,20 @@
     if (y) y.textContent = String(new Date().getFullYear());
   }
 
-  // -------------------- boot --------------------
+  function initNoResultState() {
+    const nores = document.getElementById("no-results");
+    const empty = document.getElementById("no-issues") || $("#empty-noissues");
+    if (nores) nores.classList.remove("hidden");
+    if (empty) empty.classList.add("hidden");
+  }
+
   function boot() {
     initYear();
     initTabs();
-    initDragAndDrop();
     initProfileSelector();
+    initDragAndDrop();
+    initValidate();
+    initNoResultState();
     updateSelectedFile();
     setDownloadsEnabled(false);
     updateChipCounts();
@@ -405,13 +514,15 @@
         updateChipCounts();
       })
       .catch((e) => console.error("Initial spec load failed:", e));
-
-    initValidate();
   }
 
   if (document.readyState === "complete" || document.readyState === "interactive") {
     boot();
   } else {
     on(document, "DOMContentLoaded", boot);
+  }
+
+  if (typeof window !== "undefined" && typeof window.__appBootstrap === "function") {
+    window.__appBootstrap();
   }
 })();
