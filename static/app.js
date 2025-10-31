@@ -15,7 +15,6 @@
   let activeSpecSearch = '';
   let validationIssues = [];
   let activeIssueSeverity = 'all';
-  let activeIssueSearch = '';
   
   // Helper functions
   function $(selector) {
@@ -308,32 +307,10 @@
     });
   }
 
-  function filterIssuesBySeverity(issues) {
-    if (activeIssueSeverity === 'all') return issues;
+  function filterIssuesBySeverity() {
+    if (activeIssueSeverity === 'all') return validationIssues;
     const severity = activeIssueSeverity.toLowerCase();
-    return issues.filter(issue => (issue.severity || '').toLowerCase() === severity);
-  }
-
-  function filterIssues() {
-    let filtered = filterIssuesBySeverity(validationIssues);
-
-    if (activeIssueSearch) {
-      const search = activeIssueSearch.toLowerCase();
-      filtered = filtered.filter(issue => {
-        const values = [
-          issue.item_id,
-          issue.field,
-          issue.rule_id,
-          issue.severity,
-          issue.message,
-          issue.sample_value
-        ].map(value => (value || '').toString().toLowerCase());
-
-        return values.some(value => value.includes(search));
-      });
-    }
-
-    return filtered;
+    return validationIssues.filter(issue => (issue.severity || '').toLowerCase() === severity);
   }
 
   function updateIssueTable() {
@@ -349,7 +326,7 @@
       return;
     }
 
-    const filtered = filterIssues();
+    const filtered = filterIssuesBySeverity();
 
     if (filtered.length === 0) {
       tbody.innerHTML = '';
@@ -396,11 +373,7 @@
 
     validationIssues = [];
     activeIssueSeverity = 'all';
-    activeIssueSearch = '';
     setActiveSeverityButton('all');
-
-    const searchInput = $('#filter-search');
-    if (searchInput) searchInput.value = '';
   }
   
   function updateCounters(errors, warnings, opportunities) {
@@ -470,7 +443,6 @@
       
       updateCounters(errorCount, warningCount, oppCount);
       activeIssueSeverity = 'all';
-      activeIssueSearch = '';
       setActiveSeverityButton('all');
       renderIssues(issues);
 
@@ -590,14 +562,6 @@
         updateIssueTable();
       });
     });
-
-    const searchInput = $('#filter-search');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        activeIssueSearch = e.target.value || '';
-        updateIssueTable();
-      });
-    }
   }
   
   // Initialize everything
