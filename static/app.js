@@ -537,8 +537,12 @@ btnValidate?.addEventListener("click", handleValidateClick);
 initDragAndDrop();
 initFilters();
 initCopyButtons();
-await loadSpec(getActiveProfile());
-renderSpecGrid();
+loadSpec(getActiveProfile())
+  .then(() => {
+    renderSpecGrid();
+    updateChipCounts();
+  })
+  .catch((e) => console.error("Failed to load spec:", e));
 initSpecFilterKeyboard();
 updateSelectedFile();
 const psel=document.getElementById('profile-select'); if(psel){ psel.addEventListener('change', async ()=>{ ACTIVE_PROFILE = getActiveProfile(); await loadSpec(ACTIVE_PROFILE); renderSpecGrid(); updateChipCounts(); }); }
