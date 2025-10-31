@@ -555,8 +555,11 @@
     // Setup download buttons
     initDownloadButtons();
     
-    // Load initial spec (but don't init filters yet)
+    // Load initial spec
     await loadSpec('general');
+    
+    // Initialize spec filters after spec is loaded
+    initSpecFilters();
     
     console.log('App initialized successfully!');
   }
