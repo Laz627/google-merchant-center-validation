@@ -20,7 +20,6 @@
     </div>
     <nav class="top-links">
       <a href="https://support.google.com/merchants/answer/7052112" target="_blank" rel="noopener">Spec</a>
-      
       <a href="https://www.linkedin.com/in/brandon-lazovic/" target="_blank" rel="noopener">LinkedIn</a>
     </nav>
   </header>
@@ -64,15 +63,18 @@
         </div>
         <p id="selected-file" class="selected-file" aria-live="polite">No file selected yet.</p>
 
+        <div style="margin: 16px 0;">
+          <label class="label" for="profile-select">Profile</label>
+          <select id="profile-select" style="margin-top: 6px;">
+            <option value="general">General Products</option>
+            <option value="apparel">Apparel & Clothing</option>
+            <option value="local_inventory">Local Inventory</option>
+          </select>
+        </div>
+
         <details class="advanced">
           <summary>Advanced (delimiter / encoding)</summary>
           <div class="advanced-grid">
-            <label class="label" for="profile-select">Profile</label>
-            <select id="profile-select">
-              <option value="general">general</option>
-              <option value="apparel">apparel</option>
-              <option value="local_inventory">local_inventory</option>
-            </select>
             <label class="label" for="delimiter">Delimiter</label>
             <input id="delimiter" placeholder="auto" />
             <label class="label" for="encoding">Encoding</label>
@@ -90,9 +92,7 @@
         </div>
       </div>
 
-      <div id="status" class="status hidden" aria-live="polite"></div>
-
-      <div id="results" class="results hidden">
+      <div id="results" class="results">
         <div class="results-header" aria-live="polite">
           <div id="summary-truncate" class="summary-chip hidden" role="note">This report includes the first 50&nbsp;000 rows.</div>
           <div class="download-actions">
@@ -113,8 +113,6 @@
           </div>
         </div>
 
-        <div id="spec-filter" class="spec-filter hidden" aria-live="polite"></div>
-
         <table class="issues" role="grid">
           <thead>
             <tr>
@@ -129,8 +127,7 @@
           </thead>
           <tbody id="issues-body"></tbody>
         </table>
-        <div id="note-truncate" class="truncate-note hidden">Showing first 1&nbsp;000 issues. Download CSV for the complete list.</div>
-        <div id="no-results" class="empty-state hidden" role="status">No matching results for this filter.</div>
+        <div id="no-results" class="empty-state" role="status">No matching results for this filter.</div>
         <div id="no-issues" class="empty-card hidden" role="status">
           <div class="empty-icon" aria-hidden="true">✅</div>
           <div>
@@ -148,17 +145,45 @@
     <section id="panel-spec" class="panel hidden" role="tabpanel" aria-labelledby="tab-spec">
       <div class="card">
         <h3>Understand the fields</h3>
-        <p class="muted">Browse the OpenAI commerce feed schema. Each card highlights whether the field is required, recommended, or conditional and notes any dependencies. Click a field to filter validation results for related rules.</p>
+        <p class="muted">Browse the Google Merchant Center feed schema. Each card highlights whether the field is required, recommended, or conditional and notes any dependencies.</p>
         <a class="btn ghost" href="https://support.google.com/merchants/answer/7052112" target="_blank" rel="noopener">View GMC documentation</a>
       </div>
+
+      <div class="spec-filters">
+        <div class="filter-group">
+          <label class="filter-label">Profile:</label>
+          <div class="filter-buttons" role="group" aria-label="Filter by profile">
+            <button type="button" class="filter-btn active" data-profile="general">General</button>
+            <button type="button" class="filter-btn" data-profile="apparel">Apparel</button>
+            <button type="button" class="filter-btn" data-profile="local_inventory">Local Inventory</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Importance:</label>
+          <div class="filter-buttons" role="group" aria-label="Filter by importance">
+            <button type="button" class="filter-btn active" data-importance="all">All (<span id="spec-count-all">0</span>)</button>
+            <button type="button" class="filter-btn" data-importance="required">Required (<span id="spec-count-required">0</span>)</button>
+            <button type="button" class="filter-btn" data-importance="conditional">Conditional (<span id="spec-count-conditional">0</span>)</button>
+            <button type="button" class="filter-btn" data-importance="recommended">Recommended (<span id="spec-count-recommended">0</span>)</button>
+            <button type="button" class="filter-btn" data-importance="optional">Optional (<span id="spec-count-optional">0</span>)</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <input type="search" id="spec-search" placeholder="Search fields..." aria-label="Search specification fields" />
+        </div>
+      </div>
+
       <div class="spec-grid" id="spec-grid" role="list"></div>
+      <div id="spec-no-results" class="empty-state hidden">No fields match your filters.</div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <span>&copy; <span id="year"></span> Google Merchant Center Product Feed Validator</span>
+    <span>&copy; <span id="year">2025</span> Google Merchant Center Product Feed Validator</span>
   </footer>
 
-  <script src="/app.js" defer></script>
+  <script src="/app.js"></script>
 </body>
 </html>
