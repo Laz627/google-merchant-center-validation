@@ -92,7 +92,7 @@ input{background:#0e1016;color:var(--text);border:1px solid var(--border);border
 
 .results{margin-top:20px}
 .results.hidden{display:none}
-.results-header{position:sticky;top:84px;display:flex;align-items:center;gap:18px;background:rgba(17,19,26,.92);border:1px solid var(--border);border-radius:16px;padding:12px 16px;margin-bottom:18px;backdrop-filter:blur(10px);box-shadow:0 10px 26px rgba(0,0,0,.3)}
+.results-header{display:flex;align-items:center;gap:18px;background:rgba(17,19,26,.92);border:1px solid var(--border);border-radius:16px;padding:12px 16px;margin-bottom:18px;backdrop-filter:blur(10px);box-shadow:0 10px 26px rgba(0,0,0,.3)}
 .download-actions{display:flex;align-items:center;gap:12px;margin-left:auto}
 .summary-chip{padding:6px 12px;border-radius:999px;background:rgba(255,205,77,.15);color:var(--warn);border:1px solid rgba(255,205,77,.45);font-size:12px}
 .summary-chip.hidden{display:none}
