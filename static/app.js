@@ -19,11 +19,12 @@
     return document.querySelector(selector);
   }
   
-  function $$(selector) {
+  function $(selector) {
     return Array.from(document.querySelectorAll(selector));
   }
   
   function escapeHtml(str) {
+    if (!str) return '';
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
@@ -196,7 +197,7 @@
     console.log('Switching to tab:', tabName);
     
     // Hide all panels
-    $$('.panel').forEach(panel => panel.classList.add('hidden'));
+    $('.panel').forEach(panel => panel.classList.add('hidden'));
     
     // Show target panel
     const panelId = tabName === 'spec' ? 'panel-spec' : 'panel-validate';
@@ -204,9 +205,18 @@
     if (panel) panel.classList.remove('hidden');
     
     // Update tab buttons
-    $$('.tab').forEach(tab => tab.classList.remove('active'));
+    $('.tab').forEach(tab => tab.classList.remove('active'));
     const activeTab = tabName === 'spec' ? $('#tab-spec') : $('#tab-validate');
     if (activeTab) activeTab.classList.add('active');
+    
+    // Initialize spec filters when spec tab is shown
+    if (tabName === 'spec' && !window.specFiltersInitialized) {
+      console.log('First time showing spec tab, initializing filters...');
+      setTimeout(() => {
+        initSpecFilters();
+        window.specFiltersInitialized = true;
+      }, 50);
+    }
   }
   
   // File selection
@@ -545,10 +555,7 @@
     // Setup download buttons
     initDownloadButtons();
     
-    // Setup spec filters BEFORE loading spec
-    initSpecFilters();
-    
-    // Load initial spec
+    // Load initial spec (but don't init filters yet)
     await loadSpec('general');
     
     console.log('App initialized successfully!');
