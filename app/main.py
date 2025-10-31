@@ -647,9 +647,9 @@ def validate_gmc_bytes(data: bytes, delimiter: str, encoding: str, profile: str)
             if not _norm(r.get("quantity","")):
                 _push_issue(issues, error_rows, idx, rid, "quantity", "GMC-240", "warning", "quantity is recommended for local inventory.", "")
     # Aggregate
-    total_errors = len({(i["row"], i["field"]) for i in issues if i["severity"]=="error"})
-    total_warnings = len([i for i in issues if i["severity"]=="warning"])
-    total_opps = len([i for i in issues if i["severity"]=="opportunity"])
+    total_errors = len({(i.row_index, i.field) for i in issues if i.severity == "error"})
+    total_warnings = sum(1 for i in issues if i.severity == "warning")
+    total_opps = sum(1 for i in issues if i.severity == "opportunity")
 
     # Truncate if necessary
     max_rows = 1000
