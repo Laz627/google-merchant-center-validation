@@ -5,7 +5,6 @@ import csv
 import io
 import json
 import re
-from itertools import zip_longest
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -120,8 +119,6 @@ HEADER_ALIASES: Dict[str, str] = {
     "sellerurl": "seller_url",
     "return policy": "return_policy",
     "return window": "return_window",
-    "product_category": "google_product_category",
-    "inventory_quantity": "quantity",
 }
 
 def _norm(v: Optional[str]) -> str:
@@ -188,36 +185,24 @@ def parse_as_json(data: bytes, encoding: str) -> Optional[List[Dict[str, Any]]]:
         return None
     return None
 
-def parse_as_csv_tsv(
-    data: bytes, delimiter: str, encoding: str
-) -> Tuple[List[Dict[str, Any]], List[str]]:
+def parse_as_csv_tsv(data: bytes, delimiter: str, encoding: str) -> List[Dict[str, Any]]:
     if data.startswith(b"\xef\xbb\xbf"):  # strip BOM
         data = data[3:]
     text = data.decode(encoding or "utf-8", errors="replace")
     delim = delimiter or guess_delimiter(text)
     sio = io.StringIO(text)
     reader = csv.reader(sio, delimiter=delim)
-    raw_header = next(reader, None)
-    if not raw_header:
-        return [], []
-
-    norm_header = normalize_headers([str(h or "") for h in raw_header])
-    records: List[Dict[str, Any]] = []
-
-    for row in reader:
-        # Skip empty rows that have no meaningful data
-        if not any((cell or "").strip() for cell in row):
-            continue
-
-        mapped: Dict[str, Any] = {}
-        for header, value in zip_longest(norm_header, row, fillvalue=""):
-            if header is None:
-                continue
-            mapped[header] = (value or "").strip()
-
-        records.append(normalize_record_keys(mapped))
-
-    return records, norm_header
+    raw_header = next(reader, None) or []
+    norm_header = normalize_headers([str(h) for h in raw_header])
+    # rewind and use DictReader with normalized headers
+    sio.seek(0)
+    dict_reader = csv.DictReader(sio, delimiter=delim)
+    dict_reader.fieldnames = norm_header
+    out: List[Dict[str, Any]] = []
+    _ = next(dict_reader, None)  # skip header row once
+    for row in dict_reader:
+        out.append(normalize_record_keys({k: row.get(k, "") for k in norm_header}))
+    return out
 
 # =================================
 # Validation core for GMC profiles
@@ -248,26 +233,20 @@ def validate_gmc_bytes(data: bytes, delimiter: str, encoding: str, profile: str)
     # Parse JSON first; else CSV/TSV
     records = parse_as_json(data, encoding)
     parsed_headers: List[str] = []
-    row_start_index = 1
 
     if records is None:
-        csv_records, parsed_headers = parse_as_csv_tsv(data, delimiter, encoding)
-        records = csv_records
-        row_start_index = 2  # account for header row in CSV/TSV feeds
+        text = data.decode(encoding or "utf-8", errors="replace")
+        delim = delimiter or guess_delimiter(text)
+        sio = io.StringIO(text)
+        reader = csv.DictReader(sio, delimiter=delim)
+        headers = [normalize_key(h) for h in (reader.fieldnames or [])]
+        parsed_headers = headers
+        records = [{normalize_key(k): (v or "").strip() for k, v in row.items()} for row in reader]
     else:
         # normalize keys for JSON
-        normalized_records: List[Dict[str, Any]] = []
-        header_set: set[str] = set()
-        for row in records:
-            clean_row = {
-                normalize_key(k): (("" if v is None else str(v)).strip())
-                for k, v in row.items()
-            }
-            normalized_records.append(clean_row)
-            header_set.update(clean_row.keys())
-        records = normalized_records
-        if header_set:
-            parsed_headers = sorted(header_set)
+        records = [{normalize_key(k): (("" if v is None else str(v)).strip()) for k, v in row.items()} for row in records]
+        if records:
+            parsed_headers = list(records[0].keys())
 
     # Enforce header allowlist per profile
     profile = (profile or "general").strip().lower()
@@ -280,7 +259,7 @@ def validate_gmc_bytes(data: bytes, delimiter: str, encoding: str, profile: str)
 
     # Per-row checks
     total_rows = 0
-    for idx, r in enumerate(records, start=row_start_index):
+    for idx, r in enumerate(records):
         total_rows += 1
         rid = r.get("id", "")
 
