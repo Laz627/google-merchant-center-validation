@@ -672,7 +672,7 @@ def validate_bytes(data: bytes, delimiter: str, encoding: str) -> ValidateRespon
 def health():
     return {"ok": True}
 
-@app.post("/validate/file", response_model=ValidateResponse)
+@app.post("/validate/file")
 async def validate_file(
     file: UploadFile = File(...),
     delimiter: str = Form(""),
