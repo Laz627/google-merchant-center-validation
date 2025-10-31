@@ -18,8 +18,8 @@
   function $(selector) {
     return document.querySelector(selector);
   }
-  
-  function $(selector) {
+
+  function $$(selector) {
     return Array.from(document.querySelectorAll(selector));
   }
   
@@ -143,12 +143,12 @@
   // Initialize spec filters
   function initSpecFilters() {
     // Profile filter buttons
-    $('[data-profile]').forEach(btn => {
+    $$('[data-profile]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const profile = btn.dataset.profile;
-        
+
         // Update active state
-        $('[data-profile]').forEach(b => b.classList.remove('active'));
+        $$('[data-profile]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
         // Load spec for profile
@@ -168,12 +168,12 @@
     });
     
     // Importance filter buttons
-    $('[data-importance]').forEach(btn => {
+    $$('[data-importance]').forEach(btn => {
       btn.addEventListener('click', () => {
         const importance = btn.dataset.importance;
-        
+
         // Update active state
-        $('[data-importance]').forEach(b => b.classList.remove('active'));
+        $$('[data-importance]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
         // Filter and render
@@ -197,7 +197,7 @@
     console.log('Switching to tab:', tabName);
     
     // Hide all panels
-    $('.panel').forEach(panel => panel.classList.add('hidden'));
+    $$('.panel').forEach(panel => panel.classList.add('hidden'));
     
     // Show target panel
     const panelId = tabName === 'spec' ? 'panel-spec' : 'panel-validate';
@@ -205,7 +205,7 @@
     if (panel) panel.classList.remove('hidden');
     
     // Update tab buttons
-    $('.tab').forEach(tab => tab.classList.remove('active'));
+    $$('.tab').forEach(tab => tab.classList.remove('active'));
     const activeTab = tabName === 'spec' ? $('#tab-spec') : $('#tab-validate');
     if (activeTab) activeTab.classList.add('active');
     
