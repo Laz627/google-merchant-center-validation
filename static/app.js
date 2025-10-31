@@ -168,7 +168,6 @@ var showTab;
 
   // -------------------- counters --------------------
   function setCountersDisplay(errors, warnings, opportunities) {
-    const total = (errors || 0) + (warnings || 0) + (opportunities || 0);
     const mapIds = [
       ["counter-errors", errors],
       ["counter-warnings", warnings],
@@ -176,7 +175,6 @@ var showTab;
       ["count-errors", errors],
       ["count-warnings", warnings],
       ["count-opportunities", opportunities],
-      ["count-all", total],
     ];
     mapIds.forEach(([id, value]) => {
       const el = document.getElementById(id);
@@ -279,10 +277,6 @@ var showTab;
         const badgeLabel = importance
           ? importance.charAt(0).toUpperCase() + importance.slice(1)
           : "";
-        let badgeClass = importance;
-        if (!badgeClass || ["required", "recommended", "conditional"].indexOf(badgeClass) === -1) {
-          badgeClass = "recommended";
-        }
         let dependencyText = field?.dependencies;
         if (Array.isArray(dependencyText)) {
           dependencyText = dependencyText.join(", ");
@@ -292,12 +286,17 @@ var showTab;
         }
         const description = field?.description || field?.desc || "";
         return `
-<button type="button" class="spec-card" data-field="${escAttr(name)}" data-importance="${escAttr(importance)}">
-  <div class="badge ${escAttr(badgeClass)}">${esc(badgeLabel)}</div>
-  <div class="field-name">${esc(name)}</div>
-  <p class="field-desc">${esc(description)}</p>
-  <div class="dependencies">${esc(dependencyText)}</div>
-</button>`;
+      <button type="button" class="spec-card"
+        data-field="${escAttr(name)}"
+        data-importance="${escAttr(importance)}">
+        <div class="spec-card__title">${esc(name)}</div>
+        <div class="spec-card__badge badge badge-${escAttr(importance)}">${esc(
+          badgeLabel
+        )}</div>
+        <div class="spec-card__desc">${esc(description)}</div>
+        <div class="spec-card__deps">${esc(dependencyText)}</div>
+      </button>
+    `;
       })
       .join("");
   };
@@ -307,8 +306,6 @@ var showTab;
     const ids = [
       "btn-noissues-json",
       "btn-noissues-csv",
-      "btn-download-json",
-      "btn-download-csv",
       "download-json",
       "download-csv",
       "download-tsv",
@@ -345,21 +342,19 @@ var showTab;
         const itemId = it?.item_id || it?.id || "";
         const field = it?.field || "";
         const rule = it?.rule || it?.code || it?.rule_id || "";
-        const severityRaw = it?.severity || "";
-        const severity = severityRaw.toLowerCase();
+        const severity = it?.severity || "";
         const message = it?.message || "";
         const value = it?.value || it?.sample_value || "";
-        const sevClass = severity ? `sev-${escAttr(severity)}` : "";
         return `
-<tr class="issue-row ${sevClass}">
-  <td class="col-index" data-label="#">${esc(row)}</td>
-  <td class="col-item" data-label="Item ID">${esc(itemId)}</td>
-  <td data-label="Field">${esc(field)}</td>
-  <td class="rule-id" data-label="Rule">${esc(rule)}</td>
-  <td class="${sevClass}" data-label="Severity">${esc(severityRaw)}</td>
-  <td data-label="Message">${esc(message)}</td>
-  <td class="sample-cell" data-label="Sample"><div class="sample-value">${esc(value)}</div></td>
-</tr>`;
+        <tr>
+          <td class="col-index">${esc(row)}</td>
+          <td class="col-item">${esc(itemId)}</td>
+          <td>${esc(field)}</td>
+          <td>${esc(rule)}</td>
+          <td>${esc(severity)}</td>
+          <td>${esc(message)}</td>
+          <td>${esc(value)}</td>
+        </tr>`;
       })
       .join("");
   }
@@ -382,8 +377,6 @@ var showTab;
     setCountersDisplay(errorCount, warningCount, opportunityCount);
     renderIssues(issues);
 
-    const results = document.getElementById("results");
-    if (results) results.classList.remove("hidden");
     const empty = document.getElementById("no-issues") || $("#empty-noissues");
     if (empty) empty.classList.toggle("hidden", issues.length !== 0);
     const nores = document.getElementById("no-results");
