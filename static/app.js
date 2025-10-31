@@ -197,6 +197,7 @@ var showTab;
   // -------------------- drag & drop (robust, zero DOM changes) --------------------
   function pickDropzone() {
     return (
+      document.getElementById("drop-zone") ||
       document.getElementById("dropzone") ||
       $(".dropzone") ||
       $("[data-dropzone]") ||
@@ -238,11 +239,18 @@ var showTab;
     const fi = pickFileInput();
     if (!dz || !fi) return;
 
+    on(dz, "click", (e) => {
+      if (e.target === fi) return;
+      e.preventDefault();
+      fi.click();
+    });
+
     on(dz, "dragover", (e) => {
       e.preventDefault();
       dz.classList.add("dragover");
     });
     on(dz, "dragleave", () => dz.classList.remove("dragover"));
+    on(dz, "dragend", () => dz.classList.remove("dragover"));
     on(dz, "drop", (e) => {
       e.preventDefault();
       dz.classList.remove("dragover");
@@ -262,6 +270,16 @@ var showTab;
         CURRENT_FILENAME = f.name;
         updateSelectedFile();
       }
+    });
+  }
+
+  function initBrowseButton() {
+    const browseBtn = document.getElementById("btn-browse") || $("[data-browse]");
+    const fi = pickFileInput();
+    if (!browseBtn || !fi) return;
+    on(browseBtn, "click", (e) => {
+      e.preventDefault();
+      fi.click();
     });
   }
 
