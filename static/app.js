@@ -7,8 +7,12 @@
   
   // State
   let specFields = [];
+  let allSpecData = {};
   let currentFile = null;
   let currentFilename = '';
+  let activeSpecProfile = 'general';
+  let activeSpecImportance = 'all';
+  let activeSpecSearch = '';
   
   // Helper functions
   function $(selector) {
@@ -256,6 +260,9 @@
       const data = await response.json();
       console.log('Validation complete:', data);
       
+      // Store for downloads
+      lastValidationData = data;
+      
       // Handle both response formats
       const issues = data.issues || [];
       const summary = data.summary || {};
@@ -283,6 +290,9 @@
         if (noResults) noResults.classList.add('hidden');
       }
       
+      // Enable downloads
+      enableDownloads(data);
+      
       console.log('Validation display updated');
       
     } catch (err) {
@@ -299,6 +309,73 @@
     select.addEventListener('change', () => {
       const profile = select.value || 'general';
       loadSpec(profile);
+    });
+  }
+  
+  // Download functionality
+  let lastValidationData = null;
+  
+  function enableDownloads(data) {
+    lastValidationData = data;
+    const buttons = ['#btn-download-json', '#btn-download-csv', '#btn-noissues-json', '#btn-noissues-csv'];
+    buttons.forEach(sel => {
+      const btn = $(sel);
+      if (btn) btn.disabled = false;
+    });
+  }
+  
+  function downloadJSON() {
+    if (!lastValidationData) return;
+    const blob = new Blob([JSON.stringify(lastValidationData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'validation-results.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  
+  function downloadCSV() {
+    if (!lastValidationData || !lastValidationData.issues) return;
+    
+    const issues = lastValidationData.issues;
+    const headers = ['Row', 'Item ID', 'Field', 'Rule', 'Severity', 'Message', 'Sample Value'];
+    const rows = issues.map(issue => [
+      issue.row_index ?? '',
+      issue.item_id ?? '',
+      issue.field ?? '',
+      issue.rule_id ?? '',
+      issue.severity ?? '',
+      issue.message ?? '',
+      issue.sample_value ?? ''
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'validation-results.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  
+  function initDownloadButtons() {
+    const jsonBtns = ['#btn-download-json', '#btn-noissues-json'];
+    const csvBtns = ['#btn-download-csv', '#btn-noissues-csv'];
+    
+    jsonBtns.forEach(sel => {
+      const btn = $(sel);
+      if (btn) btn.addEventListener('click', downloadJSON);
+    });
+    
+    csvBtns.forEach(sel => {
+      const btn = $(sel);
+      if (btn) btn.addEventListener('click', downloadCSV);
     });
   }
   
@@ -347,6 +424,9 @@
         validateFile();
       });
     }
+    
+    // Setup download buttons
+    initDownloadButtons();
     
     // Load initial spec
     await loadSpec('general');
