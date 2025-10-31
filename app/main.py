@@ -9,6 +9,7 @@ import re
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
 
@@ -326,14 +327,13 @@ def validate_gmc_bytes(data: bytes, delimiter: str, encoding: str, profile: str)
                 _push_issue(issues, error_rows, idx, rid, "quantity", "GMC-240", "warning",
                             "quantity is recommended for local inventory.", "")
 
-    # Aggregate (use attributes; not subscriptable)
+    # Aggregate
     total_errors = sum(1 for i in issues if i.severity == "error")
     total_warnings = sum(1 for i in issues if i.severity == "warning")
     total_opps = sum(1 for i in issues if i.severity == "opportunity")
     unique_error_rows = len({i.row_index for i in issues if i.severity == "error" and i.row_index is not None})
     pass_rate = 0.0 if total_rows == 0 else round((total_rows - unique_error_rows) / total_rows, 4)
 
-    # Return the declared model so the UI can read counters + issues
     return ValidateResponse(
         summary=Summary(
             items_total=total_rows,
@@ -353,6 +353,15 @@ def validate_gmc_bytes(data: bytes, delimiter: str, encoding: str, profile: str)
 def health() -> Dict[str, bool]:
     return {"ok": True}
 
+# EXPLICIT ROOT ROUTE - SERVE INDEX.HTML
+@app.get("/", include_in_schema=False)
+async def read_root():
+    static_dir = Path(__file__).parent.parent / "static"
+    index_file = static_dir / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+    raise HTTPException(404, "index.html not found")
+
 @app.post("/validate/file", response_model=ValidateResponse)
 async def validate_file(
     file: UploadFile = File(...),
@@ -364,7 +373,6 @@ async def validate_file(
         data = await file.read()
         return validate_gmc_bytes(data, delimiter, encoding, profile)
     except Exception as e:
-        # Print full trace in logs for debugging, but return clean 400 to client
         import traceback
         traceback.print_exc()
         raise HTTPException(400, f"Validation failed: {e}")
@@ -390,8 +398,9 @@ async def api_validate_json(
     profile: str = Form("general"),
 ):
     data = await file.read()
-    # delimiter unused for JSON
     return validate_gmc_bytes(data, "", encoding, profile)
 
-# Keep static last. check_dir=False prevents startup failure if /static is missing.
-app.mount("/", StaticFiles(directory="static", html=True, check_dir=False), name="static")
+# Mount static files (CSS, JS, samples)
+static_path = Path(__file__).parent.parent / "static"
+if static_path.exists():
+    app.mount("/", StaticFiles(directory=str(static_path), html=True), name="static")
