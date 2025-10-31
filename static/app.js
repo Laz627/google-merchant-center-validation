@@ -1,35 +1,39 @@
 /* static/app.js */
-/* Mirrors original OpenAI validator wiring; adds profile-aware spec loading and in-memory sort. */
+/* Mirrors original OpenAI validator wiring.
+   - No top-level await
+   - Profile-aware spec loading
+   - Sorts Spec cards in-memory (Required → Conditional → Recommended → Optional → name)
+   - Robust tab + drag/drop wiring with conservative fallbacks (NO DOM/CSS changes) */
 
 (function () {
   "use strict";
 
-  // ---------- DOM helpers ----------
+  // -------------------- tiny utils --------------------
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
-  const on = (el, ev, fn) => el && el.addEventListener(ev, fn);
-  const escapeHtml = (s) =>
-    String(s || "")
+  const on = (el, ev, fn, opts) => el && el.addEventListener(ev, fn, opts);
+  const esc = (s) =>
+    String(s ?? "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
-  const escapeAttr = escapeHtml;
+  const escAttr = esc;
 
-  // ---------- Globals preserved by original UI ----------
-  let SPEC_FIELDS = []; // filled via /api/spec
+  // -------------------- state --------------------
+  let SPEC_FIELDS = [];
   let ACTIVE_PROFILE = "general";
   let CURRENT_FILE = null;
   let CURRENT_FILENAME = "";
   let CURRENT_ENCODING = "utf-8";
   let CURRENT_DELIM = "";
 
-  // ---------- Spec loading + sorting ----------
+  // -------------------- spec load + sort --------------------
   async function loadSpec(profile) {
-    const p = profile || ACTIVE_PROFILE || "general";
+    const p = (profile || ACTIVE_PROFILE || "general").trim();
     const res = await fetch(`/api/spec?profile=${encodeURIComponent(p)}`);
-    if (!res.ok) throw new Error(`Failed to load spec: ${res.status}`);
+    if (!res.ok) throw new Error(`Spec load failed: ${res.status}`);
     SPEC_FIELDS = await res.json();
   }
 
@@ -44,30 +48,85 @@
   }
 
   function getActiveProfile() {
-    const sel = $("#profile-select");
+    // prefer explicit selector if your DOM has it
+    const sel =
+      $("#profile-select") ||
+      $("[data-profile-select]") ||
+      $("[name='profile']");
     if (sel) return sel.value || "general";
     return ACTIVE_PROFILE || "general";
   }
 
-  // ---------- Tabs ----------
-  function showTab(which) {
-    const panels = $$(".panel");
-    const tabs = $$(".tabs [role='tab']");
-    panels.forEach((p) => p.classList.add("hidden"));
-    tabs.forEach((t) => t.setAttribute("aria-selected", "false"));
+  // -------------------- tabs (robust, ARIA-first) --------------------
+  function showTabId(panelId) {
+    if (!panelId) return;
 
-    const panel = $(`#panel-${which}`);
-    const tab = $(`#tab-${which}`);
+    // ARIA pattern
+    const tabs = $$("[role='tab']");
+    const panels = $$("[role='tabpanel']");
+
+    if (tabs.length && panels.length) {
+      const targetPanel = document.getElementById(panelId) || $(`#${panelId}`);
+      panels.forEach((p) => p.setAttribute("hidden", "true"));
+      if (targetPanel) targetPanel.removeAttribute("hidden");
+
+      // find tab that controls this panel
+      const tab = tabs.find((t) => t.getAttribute("aria-controls") === panelId);
+      tabs.forEach((t) => t.setAttribute("aria-selected", "false"));
+      if (tab) tab.setAttribute("aria-selected", "true");
+      return;
+    }
+
+    // fallback to #panel-*
+    const panel = document.getElementById(panelId) || $(`#${panelId}`);
+    const allPanels = $$("[id^='panel-']");
+    allPanels.forEach((p) => p.classList.add("hidden"));
     if (panel) panel.classList.remove("hidden");
-    if (tab) tab.setAttribute("aria-selected", "true");
+
+    // fallback tabs by id convention
+    const allTabs = $$("[id^='tab-']");
+    allTabs.forEach((t) => t.setAttribute("aria-selected", "false"));
+    const inferredTab = document.getElementById(panelId.replace("panel-", "tab-"));
+    if (inferredTab) inferredTab.setAttribute("aria-selected", "true");
   }
 
   function initTabs() {
-    on($("#tab-validate"), "click", () => showTab("validate"));
-    on($("#tab-spec"), "click", () => showTab("spec"));
+    // Delegate clicks for role="tab"
+    on(document, "click", (e) => {
+      const t = e.target.closest("[role='tab']");
+      if (!t) return;
+      const controls = t.getAttribute("aria-controls");
+      if (!controls) return;
+      e.preventDefault();
+      showTabId(controls);
+    });
+
+    // Fallback: support id convention tab-validate/tab-spec
+    const tabValidate =
+      $("#tab-validate") || $("[data-tab='validate']") || null;
+    const tabSpec = $("#tab-spec") || $("[data-tab='spec']") || null;
+
+    on(tabValidate, "click", (e) => {
+      e.preventDefault();
+      showTabId("panel-validate");
+    });
+    on(tabSpec, "click", (e) => {
+      e.preventDefault();
+      showTabId("panel-spec");
+    });
+
+    // Default view
+    // If an ARIA tab is already selected, respect it; else show validate.
+    const selected = $("[role='tab'][aria-selected='true']");
+    if (selected && selected.getAttribute("aria-controls")) {
+      showTabId(selected.getAttribute("aria-controls"));
+    } else {
+      // fallback default
+      if (document.getElementById("panel-validate")) showTabId("panel-validate");
+    }
   }
 
-  // ---------- Counters / chip counts ----------
+  // -------------------- counters --------------------
   function setCounters({ errors = 0, warnings = 0, opportunities = 0 }) {
     const ce = $("#count-errors");
     const cw = $("#count-warnings");
@@ -78,29 +137,40 @@
   }
 
   function updateChipCounts() {
-    // If your UI has chip filters for required/conditional/etc., keep their counts here if needed.
-    // This preserves existing behavior; no DOM changes are introduced.
+    // preserve your existing chip behavior if present
   }
 
-  // ---------- Downloads (no-op until you wire your existing buttons) ----------
-  function setDownloadsEnabled(enabled) {
-    const a = $("#btn-noissues-json");
-    const b = $("#btn-noissues-csv");
-    if (a) a.disabled = !enabled;
-    if (b) b.disabled = !enabled;
+  // -------------------- drag & drop (robust, zero DOM changes) --------------------
+  function pickDropzone() {
+    return (
+      document.getElementById("dropzone") ||
+      $(".dropzone") ||
+      $("[data-dropzone]") ||
+      $("#uploader") ||
+      $("#upload-area")
+    );
   }
 
-  // ---------- File selection UI ----------
+  function pickFileInput() {
+    return (
+      document.getElementById("file-input") ||
+      $("input[type='file'][data-file-input]") ||
+      $("input[type='file']") // last resort; assumes only one file input
+    );
+  }
+
   function updateSelectedFile() {
-    const el = $("#selected-file");
+    const el =
+      document.getElementById("selected-file") ||
+      $("[data-selected-file]") ||
+      $("#file-label");
     if (!el) return;
     el.textContent = CURRENT_FILENAME ? CURRENT_FILENAME : "No file selected";
   }
 
-  // ---------- Drag & Drop ----------
   function initDragAndDrop() {
-    const dz = $("#dropzone");
-    const fi = $("#file-input");
+    const dz = pickDropzone();
+    const fi = pickFileInput();
     if (!dz || !fi) return;
 
     on(dz, "dragover", (e) => {
@@ -111,7 +181,7 @@
     on(dz, "drop", (e) => {
       e.preventDefault();
       dz.classList.remove("dragover");
-      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      const f = e.dataTransfer?.files?.[0];
       if (f) {
         CURRENT_FILE = f;
         CURRENT_FILENAME = f.name;
@@ -120,7 +190,7 @@
     });
 
     on(fi, "change", (e) => {
-      const f = e.target && e.target.files && e.target.files[0];
+      const f = e.target?.files?.[0];
       if (f) {
         CURRENT_FILE = f;
         CURRENT_FILENAME = f.name;
@@ -129,29 +199,30 @@
     });
   }
 
-  // ---------- Spec grid render ----------
+  // -------------------- spec grid --------------------
   function renderSpecGrid() {
-    const specGrid = $("#spec-grid");
+    const specGrid =
+      document.getElementById("spec-grid") || $("[data-spec-grid]");
     if (!specGrid) return;
 
-    // sort by importance → name; keep selectors/markup identical
     const fields = sortSpecByImportance(SPEC_FIELDS);
 
     specGrid.innerHTML = fields
       .map((field) => {
-        const badgeLabel =
-          field.importance.charAt(0).toUpperCase() + field.importance.slice(1);
-        const dependencyText = field.dependencies || "No additional dependencies.";
+        const badge = (field.importance || "").toLowerCase();
+        const badgeLabel = badge
+          ? badge.charAt(0).toUpperCase() + badge.slice(1)
+          : "";
         return `
-<button type="button" class="spec-card" data-field="${escapeAttr(
+<button type="button" class="spec-card" data-field="${escAttr(
           field.name
-        )}" data-importance="${escapeAttr(field.importance)}">
+        )}" data-importance="${escAttr(field.importance)}">
   <div class="spec-card__head">
-    <span class="badge badge--${escapeAttr(field.importance)}">${badgeLabel}</span>
+    <span class="badge badge--${escAttr(badge)}">${esc(badgeLabel)}</span>
   </div>
   <div class="spec-card__body">
-    <h4>${escapeHtml(field.name)}</h4>
-    <p>${escapeHtml(field.description || "")}</p>
+    <h4>${esc(field.name)}</h4>
+    <p>${esc(field.description || "")}</p>
     <div class="muted">—</div>
   </div>
 </button>`;
@@ -159,19 +230,26 @@
       .join("");
   }
 
-  // ---------- Results table rendering ----------
+  // -------------------- results table --------------------
   function clearResults() {
-    const tb = $("#results-body");
-    const empty = $("#empty-noissues");
+    const tb =
+      document.getElementById("results-body") || $("[data-results-body]");
+    const empty =
+      document.getElementById("empty-noissues") || $("[data-empty]");
     if (tb) tb.innerHTML = "";
     if (empty) empty.classList.add("hidden");
     setCounters({ errors: 0, warnings: 0, opportunities: 0 });
     setDownloadsEnabled(false);
   }
 
+  function setDownloadsEnabled(enabled) {
+    const a = document.getElementById("btn-noissues-json");
+    const b = document.getElementById("btn-noissues-csv");
+    if (a) a.disabled = !enabled;
+    if (b) b.disabled = !enabled;
+  }
+
   function renderResults(payload) {
-    // The backend should return ValidateResponse (summary + issues).
-    // We support both the model shape and a legacy flat dict.
     const issues = payload?.issues || [];
     const summary = payload?.summary || null;
 
@@ -184,7 +262,6 @@
       warnings = Number(summary.items_with_warnings || 0);
       opportunities = Number(summary.items_with_opportunities || 0);
     } else {
-      // Legacy: compute from issues if summary missing
       for (const it of issues) {
         if (it.severity === "error") errors++;
         else if (it.severity === "warning") warnings++;
@@ -194,8 +271,11 @@
 
     setCounters({ errors, warnings, opportunities });
 
-    const tb = $("#results-body");
-    const empty = $("#empty-noissues");
+    const tb =
+      document.getElementById("results-body") || $("[data-results-body]");
+    const empty =
+      document.getElementById("empty-noissues") || $("[data-empty]");
+
     if (!tb) return;
 
     if (!issues.length) {
@@ -212,15 +292,14 @@
         const sev = it.severity || "";
         const msg = it.message || "";
         const sample = it.sample_value || "";
-
         return `
-<tr class="issue-row issue-${escapeAttr(sev)}">
-  <td class="col-row">${escapeHtml(r)}</td>
-  <td class="col-id">${escapeHtml(id)}</td>
-  <td class="col-field">${escapeHtml(field)}</td>
-  <td class="col-sev">${escapeHtml(sev)}</td>
-  <td class="col-msg">${escapeHtml(msg)}</td>
-  <td class="col-sample">${escapeHtml(sample)}</td>
+<tr class="issue-row issue-${escAttr(sev)}">
+  <td class="col-row">${esc(r)}</td>
+  <td class="col-id">${esc(id)}</td>
+  <td class="col-field">${esc(field)}</td>
+  <td class="col-sev">${esc(sev)}</td>
+  <td class="col-msg">${esc(msg)}</td>
+  <td class="col-sample">${esc(sample)}</td>
 </tr>`;
       })
       .join("");
@@ -229,9 +308,10 @@
     setDownloadsEnabled(true);
   }
 
-  // ---------- Validation submit ----------
+  // -------------------- validation submit --------------------
   function initValidate() {
-    const btn = $("#btn-validate");
+    const btn =
+      document.getElementById("btn-validate") || $("[data-validate]");
     if (!btn) return;
 
     on(btn, "click", async (e) => {
@@ -242,57 +322,56 @@
       }
       clearResults();
 
-      const encoding = $("#encoding") || { value: "utf-8" };
-      const delimiter = $("#delimiter") || { value: "" };
+      const encoding =
+        document.getElementById("encoding") ||
+        $("[data-encoding]") || { value: "utf-8" };
+      const delimiter =
+        document.getElementById("delimiter") ||
+        $("[data-delimiter]") || { value: "" };
 
       const fd = new FormData();
       fd.append("file", CURRENT_FILE);
-      fd.append("encoding", (encoding.value || "utf-8").trim());
-      fd.append("delimiter", (delimiter.value || "").trim());
-      fd.append("profile", getActiveProfile()); // ← profile added
+      fd.append("encoding", String(encoding.value || "utf-8").trim());
+      fd.append("delimiter", String(delimiter.value || "").trim());
+      fd.append("profile", getActiveProfile());
 
       try {
-        const res = await fetch("/validate/file", {
-          method: "POST",
-          body: fd,
-        });
+        const res = await fetch("/validate/file", { method: "POST", body: fd });
         if (!res.ok) {
           const txt = await res.text();
           console.error("Validation failed:", res.status, txt);
-          showValidationFailed(txt);
+          showValidationFailed(txt || `HTTP ${res.status}`);
           return;
         }
         const payload = await res.json();
         renderResults(payload);
       } catch (err) {
         console.error("Validation error:", err);
-        showValidationFailed(String(err && err.message ? err.message : err));
+        showValidationFailed(
+          String(err && err.message ? err.message : err || "Validation failed")
+        );
       }
     });
   }
 
   function showValidationFailed(reason) {
-    const banner = $("#validation-failed");
+    const banner =
+      document.getElementById("validation-failed") || $("[data-fail]");
+    const msg = document.getElementById("validation-failed-msg") || null;
     if (!banner) return;
-    const msg = $("#validation-failed-msg");
     if (msg) msg.textContent = String(reason || "Validation failed");
     banner.classList.remove("hidden");
     setTimeout(() => banner.classList.add("hidden"), 6000);
   }
 
-  // ---------- Spec interactions (keyboard/filter hooks preserved) ----------
-  function initSpecFilterKeyboard() {
-    // Keep any existing keyboard handler logic. Stub kept to preserve wiring.
-  }
-
-  function initCopyButtons() {
-    // If you had “copy” buttons in the original app, preserve their listeners here.
-  }
-
-  // ---------- Profile selector wiring ----------
+  // -------------------- profile selector --------------------
   function initProfileSelector() {
-    const sel = $("#profile-select");
+    const sel =
+      document.getElementById("profile-select") ||
+      $("[data-profile-select]") ||
+      $("[name='profile']");
     if (!sel) return;
+
     on(sel, "change", () => {
       ACTIVE_PROFILE = getActiveProfile();
       loadSpec(ACTIVE_PROFILE)
@@ -300,36 +379,32 @@
           renderSpecGrid();
           updateChipCounts();
         })
-        .catch((e) => console.error("Failed to reload spec:", e));
+        .catch((e) => console.error("Spec reload failed:", e));
     });
   }
 
-  // ---------- Year footer ----------
+  // -------------------- footer year (optional) --------------------
   function initYear() {
-    const yearEl = $("#year");
-    if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+    const y = document.getElementById("year") || $("[data-year]");
+    if (y) y.textContent = String(new Date().getFullYear());
   }
 
-  // ---------- Boot ----------
+  // -------------------- boot --------------------
   function boot() {
     initYear();
     initTabs();
     initDragAndDrop();
-    initCopyButtons();
-    initSpecFilterKeyboard();
     initProfileSelector();
     updateSelectedFile();
     setDownloadsEnabled(false);
     updateChipCounts();
-    showTab("validate");
 
-    // Load initial spec without top-level await
     loadSpec(getActiveProfile())
       .then(() => {
         renderSpecGrid();
         updateChipCounts();
       })
-      .catch((e) => console.error("Failed to load spec:", e));
+      .catch((e) => console.error("Initial spec load failed:", e));
 
     initValidate();
   }
