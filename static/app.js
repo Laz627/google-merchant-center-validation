@@ -35,43 +35,160 @@
       console.log('Loading spec for profile:', profile);
       const response = await fetch(`/api/spec?profile=${profile || 'general'}`);
       if (!response.ok) throw new Error('Failed to load spec');
-      specFields = await response.json();
-      console.log('Loaded', specFields.length, 'fields');
+      const data = await response.json();
+      
+      // Store in appropriate profile
+      allSpecData[profile] = data;
+      
+      // Set active and render
+      specFields = data;
+      activeSpecProfile = profile;
+      console.log('Loaded', specFields.length, 'fields for', profile);
+      
+      updateSpecCounts();
       renderSpecCards();
     } catch (err) {
       console.error('Error loading spec:', err);
     }
   }
   
+  // Update spec field counts
+  function updateSpecCounts() {
+    if (!specFields || specFields.length === 0) return;
+    
+    const counts = {
+      all: specFields.length,
+      required: specFields.filter(f => f.importance === 'required').length,
+      conditional: specFields.filter(f => f.importance === 'conditional').length,
+      recommended: specFields.filter(f => f.importance === 'recommended').length,
+      optional: specFields.filter(f => f.importance === 'optional').length
+    };
+    
+    console.log('Spec counts:', counts);
+    
+    Object.entries(counts).forEach(([key, value]) => {
+      const el = $(`#spec-count-${key}`);
+      if (el) {
+        el.textContent = value;
+        console.log(`Updated #spec-count-${key} to ${value}`);
+      }
+    });
+  }
+  
+  // Filter spec fields
+  function filterSpecFields() {
+    let filtered = specFields;
+    
+    // Filter by importance
+    if (activeSpecImportance !== 'all') {
+      filtered = filtered.filter(f => f.importance === activeSpecImportance);
+    }
+    
+    // Filter by search
+    if (activeSpecSearch) {
+      const search = activeSpecSearch.toLowerCase();
+      filtered = filtered.filter(f => 
+        (f.name || '').toLowerCase().includes(search) ||
+        (f.description || '').toLowerCase().includes(search) ||
+        (f.dependencies || '').toLowerCase().includes(search)
+      );
+    }
+    
+    return filtered;
+  }
+  
   // Render specification cards
   function renderSpecCards() {
     const grid = $('#spec-grid');
+    const noResults = $('#spec-no-results');
     if (!grid) return;
     
-    if (specFields.length === 0) {
-      grid.innerHTML = '<p style="color: #8b90a0; padding: 20px;">No specification loaded</p>';
+    const filtered = filterSpecFields();
+    
+    console.log('Rendering spec cards. Filtered count:', filtered.length, 'Total:', specFields.length);
+    
+    if (filtered.length === 0) {
+      grid.innerHTML = '';
+      if (noResults) noResults.classList.remove('hidden');
       return;
     }
     
+    if (noResults) noResults.classList.add('hidden');
+    
     // Sort by importance
     const order = { required: 0, conditional: 1, recommended: 2, optional: 3 };
-    const sorted = [...specFields].sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
       const orderA = order[a.importance] ?? 99;
       const orderB = order[b.importance] ?? 99;
       if (orderA !== orderB) return orderA - orderB;
       return (a.name || '').localeCompare(b.name || '');
     });
     
-    grid.innerHTML = sorted.map(field => `
+    grid.innerHTML = sorted.map(field => {
+      const deps = field.dependencies || 'No additional dependencies';
+      return `
       <div class="spec-card">
         <div class="spec-card__title">${escapeHtml(field.name)}</div>
-        <div class="spec-card__badge badge badge-${field.importance}">${field.importance}</div>
+        <div class="spec-card__badge badge badge-${escapeHtml(field.importance)}">${escapeHtml(field.importance)}</div>
         <div class="spec-card__desc">${escapeHtml(field.description || '')}</div>
-        <div class="spec-card__deps">${escapeHtml(field.dependencies || 'No dependencies')}</div>
+        <div class="spec-card__deps"><strong>Dependencies:</strong> ${escapeHtml(deps)}</div>
       </div>
-    `).join('');
+    `;
+    }).join('');
     
     console.log('Rendered', sorted.length, 'spec cards');
+  }
+  
+  // Initialize spec filters
+  function initSpecFilters() {
+    // Profile filter buttons
+    $('[data-profile]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const profile = btn.dataset.profile;
+        
+        // Update active state
+        $('[data-profile]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Load spec for profile
+        activeSpecProfile = profile;
+        if (!allSpecData[profile]) {
+          await loadSpec(profile);
+        } else {
+          specFields = allSpecData[profile];
+          updateSpecCounts();
+          renderSpecCards();
+        }
+        
+        // Update validation profile selector too
+        const profileSelect = $('#profile-select');
+        if (profileSelect) profileSelect.value = profile;
+      });
+    });
+    
+    // Importance filter buttons
+    $('[data-importance]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const importance = btn.dataset.importance;
+        
+        // Update active state
+        $('[data-importance]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Filter and render
+        activeSpecImportance = importance;
+        renderSpecCards();
+      });
+    });
+    
+    // Search input
+    const searchInput = $('#spec-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        activeSpecSearch = e.target.value;
+        renderSpecCards();
+      });
+    }
   }
   
   // Tab switching
@@ -427,6 +544,9 @@
     
     // Setup download buttons
     initDownloadButtons();
+    
+    // Setup spec filters BEFORE loading spec
+    initSpecFilters();
     
     // Load initial spec
     await loadSpec('general');
