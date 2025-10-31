@@ -145,6 +145,17 @@ input{background:#0e1016;color:var(--text);border:1px solid var(--border);border
 .badge-conditional,.badge.conditional{background:rgba(255,205,77,.18);color:var(--warn);border:1px solid rgba(255,205,77,.45)}
 .badge-optional,.badge.optional{background:rgba(139,227,139,.15);color:var(--ok);border:1px solid rgba(139,227,139,.3)}
 
+.spec-filters{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px}
+.filter-group{margin-bottom:16px}
+.filter-group:last-child{margin-bottom:0}
+.filter-label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px}
+.filter-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.filter-btn{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer;transition:background .2s ease,border-color .2s ease,color .2s ease}
+.filter-btn:hover{border-color:var(--accent);color:var(--accent)}
+.filter-btn.active{background:rgba(124,92,255,.2);border-color:var(--accent);color:#fff}
+#spec-search{width:100%;max-width:400px;background:#0e1016;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:14px}
+#spec-no-results{margin-top:20px}
+
 .site-footer{margin:30px 0 40px;text-align:center;color:var(--muted)}
 .muted{color:var(--muted)}
 
