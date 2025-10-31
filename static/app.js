@@ -13,13 +13,16 @@
   let activeSpecProfile = 'general';
   let activeSpecImportance = 'all';
   let activeSpecSearch = '';
+  let validationIssues = [];
+  let activeIssueSeverity = 'all';
+  let activeIssueSearch = '';
   
   // Helper functions
   function $(selector) {
     return document.querySelector(selector);
   }
-  
-  function $(selector) {
+
+  function $$(selector) {
     return Array.from(document.querySelectorAll(selector));
   }
   
@@ -143,12 +146,12 @@
   // Initialize spec filters
   function initSpecFilters() {
     // Profile filter buttons
-    $('[data-profile]').forEach(btn => {
+    $$('[data-profile]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const profile = btn.dataset.profile;
-        
+
         // Update active state
-        $('[data-profile]').forEach(b => b.classList.remove('active'));
+        $$('[data-profile]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
         // Load spec for profile
@@ -168,12 +171,12 @@
     });
     
     // Importance filter buttons
-    $('[data-importance]').forEach(btn => {
+    $$('[data-importance]').forEach(btn => {
       btn.addEventListener('click', () => {
         const importance = btn.dataset.importance;
-        
+
         // Update active state
-        $('[data-importance]').forEach(b => b.classList.remove('active'));
+        $$('[data-importance]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
         // Filter and render
@@ -197,7 +200,7 @@
     console.log('Switching to tab:', tabName);
     
     // Hide all panels
-    $('.panel').forEach(panel => panel.classList.add('hidden'));
+    $$('.panel').forEach(panel => panel.classList.add('hidden'));
     
     // Show target panel
     const panelId = tabName === 'spec' ? 'panel-spec' : 'panel-validate';
@@ -205,7 +208,7 @@
     if (panel) panel.classList.remove('hidden');
     
     // Update tab buttons
-    $('.tab').forEach(tab => tab.classList.remove('active'));
+    $$('.tab').forEach(tab => tab.classList.remove('active'));
     const activeTab = tabName === 'spec' ? $('#tab-spec') : $('#tab-validate');
     if (activeTab) activeTab.classList.add('active');
     
@@ -295,20 +298,109 @@
   }
   
   // Validation
+  function setActiveSeverityButton(severity) {
+    $$('[data-severity]').forEach(btn => {
+      if (btn.dataset.severity === severity) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  function filterIssuesBySeverity(issues) {
+    if (activeIssueSeverity === 'all') return issues;
+    const severity = activeIssueSeverity.toLowerCase();
+    return issues.filter(issue => (issue.severity || '').toLowerCase() === severity);
+  }
+
+  function filterIssues() {
+    let filtered = filterIssuesBySeverity(validationIssues);
+
+    if (activeIssueSearch) {
+      const search = activeIssueSearch.toLowerCase();
+      filtered = filtered.filter(issue => {
+        const values = [
+          issue.item_id,
+          issue.field,
+          issue.rule_id,
+          issue.severity,
+          issue.message,
+          issue.sample_value
+        ].map(value => (value || '').toString().toLowerCase());
+
+        return values.some(value => value.includes(search));
+      });
+    }
+
+    return filtered;
+  }
+
+  function updateIssueTable() {
+    const tbody = $('#issues-body');
+    if (!tbody) return;
+
+    const noResults = $('#no-results');
+
+    if (!validationIssues || validationIssues.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#8b90a0;">No issues found</td></tr>';
+      if (noResults) noResults.classList.add('hidden');
+      console.log('Rendered 0 issues (no validation issues available)');
+      return;
+    }
+
+    const filtered = filterIssues();
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      if (noResults) noResults.classList.remove('hidden');
+      console.log('Rendered 0 issues for filter:', activeIssueSeverity);
+      return;
+    }
+
+    if (noResults) noResults.classList.add('hidden');
+
+    tbody.innerHTML = filtered.map((issue, idx) => {
+      const row = issue.row_index ?? idx + 1;
+      const severity = issue.severity || 'info';
+      return `
+        <tr>
+          <td class="col-index">${escapeHtml(row)}</td>
+          <td class="col-item">${escapeHtml(issue.item_id || '')}</td>
+          <td>${escapeHtml(issue.field || '')}</td>
+          <td>${escapeHtml(issue.rule_id || '')}</td>
+          <td class="sev-${severity}">${escapeHtml(severity)}</td>
+          <td>${escapeHtml(issue.message || '')}</td>
+          <td>${escapeHtml(issue.sample_value || '')}</td>
+        </tr>
+      `;
+    }).join('');
+
+    console.log('Rendered', filtered.length, 'issues (filter:', activeIssueSeverity, ')');
+  }
+
   function clearResults() {
     const tbody = $('#issues-body');
     if (tbody) tbody.innerHTML = '';
-    
+
     const noIssues = $('#no-issues');
     if (noIssues) noIssues.classList.add('hidden');
-    
+
     const noResults = $('#no-results');
     if (noResults) noResults.classList.add('hidden');
-    
+
     const results = $('#results');
     if (results) results.classList.add('hidden');
-    
+
     updateCounters(0, 0, 0);
+
+    validationIssues = [];
+    activeIssueSeverity = 'all';
+    activeIssueSearch = '';
+    setActiveSeverityButton('all');
+
+    const searchInput = $('#filter-search');
+    if (searchInput) searchInput.value = '';
   }
   
   function updateCounters(errors, warnings, opportunities) {
@@ -328,31 +420,8 @@
   }
   
   function renderIssues(issues) {
-    const tbody = $('#issues-body');
-    if (!tbody) return;
-    
-    if (!issues || issues.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#8b90a0;">No issues found</td></tr>';
-      return;
-    }
-    
-    tbody.innerHTML = issues.map((issue, idx) => {
-      const row = issue.row_index ?? idx + 1;
-      const severity = issue.severity || 'info';
-      return `
-        <tr>
-          <td class="col-index">${escapeHtml(row)}</td>
-          <td class="col-item">${escapeHtml(issue.item_id || '')}</td>
-          <td>${escapeHtml(issue.field || '')}</td>
-          <td>${escapeHtml(issue.rule_id || '')}</td>
-          <td class="sev-${severity}">${escapeHtml(severity)}</td>
-          <td>${escapeHtml(issue.message || '')}</td>
-          <td>${escapeHtml(issue.sample_value || '')}</td>
-        </tr>
-      `;
-    }).join('');
-    
-    console.log('Rendered', issues.length, 'issues');
+    validationIssues = Array.isArray(issues) ? issues : [];
+    updateIssueTable();
   }
   
   async function validateFile() {
@@ -400,7 +469,13 @@
       const oppCount = summary.items_with_opportunities ?? data.opportunities ?? 0;
       
       updateCounters(errorCount, warningCount, oppCount);
+      activeIssueSeverity = 'all';
+      activeIssueSearch = '';
+      setActiveSeverityButton('all');
       renderIssues(issues);
+
+      const searchInput = $('#filter-search');
+      if (searchInput) searchInput.value = '';
       
       // Show results section
       const results = $('#results');
@@ -494,16 +569,35 @@
   function initDownloadButtons() {
     const jsonBtns = ['#btn-download-json', '#btn-noissues-json'];
     const csvBtns = ['#btn-download-csv', '#btn-noissues-csv'];
-    
+
     jsonBtns.forEach(sel => {
       const btn = $(sel);
       if (btn) btn.addEventListener('click', downloadJSON);
     });
-    
+
     csvBtns.forEach(sel => {
       const btn = $(sel);
       if (btn) btn.addEventListener('click', downloadCSV);
     });
+  }
+
+  function initIssueFilters() {
+    $$('[data-severity]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const severity = btn.dataset.severity || 'all';
+        activeIssueSeverity = severity;
+        setActiveSeverityButton(severity);
+        updateIssueTable();
+      });
+    });
+
+    const searchInput = $('#filter-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        activeIssueSearch = e.target.value || '';
+        updateIssueTable();
+      });
+    }
   }
   
   // Initialize everything
@@ -554,6 +648,7 @@
     
     // Setup download buttons
     initDownloadButtons();
+    initIssueFilters();
     
     // Load initial spec
     await loadSpec('general');
