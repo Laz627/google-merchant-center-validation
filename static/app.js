@@ -1,402 +1,364 @@
-/* static/app.js - FIXED VERSION */
+/* static/app.js - Final Working Version */
 
-(function () {
-  "use strict";
-
-  // -------------------- Utilities --------------------
-  const $ = (sel, root) => (root || document).querySelector(sel);
-  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
-  const on = (el, ev, fn, opts) => el && el.addEventListener(ev, fn, opts);
-  const esc = (s) =>
-    String(s ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-
-  // -------------------- State --------------------
-  let SPEC_FIELDS = [];
-  let ACTIVE_PROFILE = "general";
-  let CURRENT_FILE = null;
-  let CURRENT_FILENAME = "";
-  let CURRENT_ENCODING = "utf-8";
-  let CURRENT_DELIM = "";
-
-  // -------------------- Spec Loading --------------------
+(function() {
+  'use strict';
+  
+  console.log('App.js loading...');
+  
+  // State
+  let specFields = [];
+  let currentFile = null;
+  let currentFilename = '';
+  
+  // Helper functions
+  function $(selector) {
+    return document.querySelector(selector);
+  }
+  
+  function $$(selector) {
+    return Array.from(document.querySelectorAll(selector));
+  }
+  
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+  
+  // Load specification from API
   async function loadSpec(profile) {
-    const p = (profile || ACTIVE_PROFILE || "general").trim();
     try {
-      const res = await fetch(`/api/spec?profile=${encodeURIComponent(p)}`);
-      if (!res.ok) throw new Error(`Spec load failed: ${res.status}`);
-      SPEC_FIELDS = await res.json();
-      console.log(`Loaded ${SPEC_FIELDS.length} fields for profile: ${p}`);
+      console.log('Loading spec for profile:', profile);
+      const response = await fetch(`/api/spec?profile=${profile || 'general'}`);
+      if (!response.ok) throw new Error('Failed to load spec');
+      specFields = await response.json();
+      console.log('Loaded', specFields.length, 'fields');
+      renderSpecCards();
     } catch (err) {
-      console.error("Failed to load spec:", err);
-      SPEC_FIELDS = [];
+      console.error('Error loading spec:', err);
     }
   }
-
-  function sortSpecByImportance(fields) {
-    const order = { required: 0, conditional: 1, recommended: 2, optional: 3 };
-    return [...fields].sort((a, b) => {
-      const ia = order[(a && a.importance) || "optional"] ?? 99;
-      const ib = order[(b && b.importance) || "optional"] ?? 99;
-      if (ia !== ib) return ia - ib;
-      return (a?.name || "").localeCompare(b?.name || "");
-    });
-  }
-
-  function renderSpecGrid() {
-    const specGrid = $("#spec-grid");
-    if (!specGrid) return;
+  
+  // Render specification cards
+  function renderSpecCards() {
+    const grid = $('#spec-grid');
+    if (!grid) return;
     
-    const fields = Array.isArray(SPEC_FIELDS) ? sortSpecByImportance(SPEC_FIELDS) : [];
-    
-    if (fields.length === 0) {
-      specGrid.innerHTML = '<p class="muted" style="padding: 20px;">Loading specification...</p>';
+    if (specFields.length === 0) {
+      grid.innerHTML = '<p style="color: #8b90a0; padding: 20px;">No specification loaded</p>';
       return;
     }
-
-    specGrid.innerHTML = fields
-      .map((field) => {
-        const name = field?.name || "";
-        const importance = (field?.importance || "optional").toLowerCase();
-        const badgeLabel = importance.charAt(0).toUpperCase() + importance.slice(1);
-        const description = field?.description || field?.desc || "";
-        let dependencyText = field?.dependencies || "No additional dependencies.";
-        
-        return `
-          <button type="button" class="spec-card" data-field="${esc(name)}" data-importance="${esc(importance)}">
-            <div class="spec-card__title">${esc(name)}</div>
-            <div class="spec-card__badge badge badge-${esc(importance)}">${esc(badgeLabel)}</div>
-            <div class="spec-card__desc">${esc(description)}</div>
-            <div class="spec-card__deps">${esc(dependencyText)}</div>
-          </button>
-        `;
-      })
-      .join("");
+    
+    // Sort by importance
+    const order = { required: 0, conditional: 1, recommended: 2, optional: 3 };
+    const sorted = [...specFields].sort((a, b) => {
+      const orderA = order[a.importance] ?? 99;
+      const orderB = order[b.importance] ?? 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+    
+    grid.innerHTML = sorted.map(field => `
+      <div class="spec-card">
+        <div class="spec-card__title">${escapeHtml(field.name)}</div>
+        <div class="spec-card__badge badge badge-${field.importance}">${field.importance}</div>
+        <div class="spec-card__desc">${escapeHtml(field.description || '')}</div>
+        <div class="spec-card__deps">${escapeHtml(field.dependencies || 'No dependencies')}</div>
+      </div>
+    `).join('');
+    
+    console.log('Rendered', sorted.length, 'spec cards');
   }
-
-  // -------------------- Tabs --------------------
-  function showTab(name) {
-    const panelId = name === "spec" ? "panel-spec" : "panel-validate";
+  
+  // Tab switching
+  function showTab(tabName) {
+    console.log('Switching to tab:', tabName);
     
     // Hide all panels
-    $$("[role='tabpanel']").forEach((p) => p.classList.add("hidden"));
+    $$('.panel').forEach(panel => panel.classList.add('hidden'));
     
     // Show target panel
-    const targetPanel = $(`#${panelId}`);
-    if (targetPanel) targetPanel.classList.remove("hidden");
+    const panelId = tabName === 'spec' ? 'panel-spec' : 'panel-validate';
+    const panel = $(`#${panelId}`);
+    if (panel) panel.classList.remove('hidden');
     
-    // Update tab states
-    $$("[role='tab']").forEach((t) => t.setAttribute("aria-selected", "false"));
-    const activeTab = name === "spec" ? $("#tab-spec") : $("#tab-validate");
-    if (activeTab) activeTab.setAttribute("aria-selected", "true");
+    // Update tab buttons
+    $$('.tab').forEach(tab => tab.classList.remove('active'));
+    const activeTab = tabName === 'spec' ? $('#tab-spec') : $('#tab-validate');
+    if (activeTab) activeTab.classList.add('active');
   }
-
-  function initTabs() {
-    on($("#tab-validate"), "click", (e) => {
-      e.preventDefault();
-      showTab("validate");
-    });
-    
-    on($("#tab-spec"), "click", (e) => {
-      e.preventDefault();
-      showTab("spec");
-    });
-    
-    // Show validate tab by default
-    showTab("validate");
-  }
-
-  // -------------------- File Selection --------------------
-  function updateSelectedFile() {
-    const el = $("#selected-file");
-    if (el) {
-      el.textContent = CURRENT_FILENAME ? CURRENT_FILENAME : "No file selected yet.";
+  
+  // File selection
+  function updateFileLabel() {
+    const label = $('#selected-file');
+    if (label) {
+      label.textContent = currentFilename || 'No file selected yet.';
     }
   }
-
-  function handleFileSelection(file) {
+  
+  function handleFile(file) {
     if (!file) return;
-    CURRENT_FILE = file;
-    CURRENT_FILENAME = file.name;
-    updateSelectedFile();
-    console.log("File selected:", file.name);
+    currentFile = file;
+    currentFilename = file.name;
+    updateFileLabel();
+    console.log('File selected:', file.name);
   }
-
-  // -------------------- Drag & Drop --------------------
-  function initDragAndDrop() {
-    const dropZone = $("#drop-zone");
-    const fileInput = $("#file-input");
+  
+  // Drag and drop
+  function initDragDrop() {
+    const dropZone = $('#drop-zone');
+    const fileInput = $('#file-input');
     
     if (!dropZone || !fileInput) {
-      console.error("Drop zone or file input not found");
+      console.error('Drop zone or file input not found');
       return;
     }
-
-    // File input change
-    on(fileInput, "change", (e) => {
-      const file = e.target?.files?.[0];
-      if (file) handleFileSelection(file);
-    });
-
+    
     // Click to browse
-    on(dropZone, "click", (e) => {
+    dropZone.addEventListener('click', (e) => {
       if (e.target !== fileInput) {
         e.preventDefault();
         fileInput.click();
       }
     });
-
-    // Drag events
-    on(dropZone, "dragover", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      dropZone.classList.add("dragging");
-    });
-
-    on(dropZone, "dragleave", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      dropZone.classList.remove("dragging");
-    });
-
-    on(dropZone, "drop", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      dropZone.classList.remove("dragging");
-      
-      const file = e.dataTransfer?.files?.[0];
-      if (file) {
-        handleFileSelection(file);
-        // Sync with file input
-        try {
-          const dt = new DataTransfer();
-          dt.items.add(file);
-          fileInput.files = dt.files;
-        } catch (err) {
-          console.warn("Could not sync file input:", err);
-        }
-      }
-    });
-
-    console.log("Drag & drop initialized");
-  }
-
-  // -------------------- Browse Button --------------------
-  function initBrowseButton() {
-    const browseBtn = $("#btn-browse");
-    const fileInput = $("#file-input");
     
-    if (browseBtn && fileInput) {
-      on(browseBtn, "click", (e) => {
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) handleFile(file);
+    });
+    
+    // Drag over
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragging');
+    });
+    
+    // Drag leave
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragging');
+    });
+    
+    // Drop
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragging');
+      const file = e.dataTransfer?.files[0];
+      if (file) handleFile(file);
+    });
+    
+    console.log('Drag & drop initialized');
+  }
+  
+  // Browse button
+  function initBrowseButton() {
+    const btn = $('#btn-browse');
+    const input = $('#file-input');
+    if (btn && input) {
+      btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        fileInput.click();
+        input.click();
       });
     }
   }
-
-  // -------------------- Validation --------------------
+  
+  // Validation
   function clearResults() {
-    const tbody = $("#issues-body");
-    if (tbody) tbody.innerHTML = "";
+    const tbody = $('#issues-body');
+    if (tbody) tbody.innerHTML = '';
     
-    const noIssues = $("#no-issues");
-    if (noIssues) noIssues.classList.add("hidden");
+    const noIssues = $('#no-issues');
+    if (noIssues) noIssues.classList.add('hidden');
     
-    const noResults = $("#no-results");
-    if (noResults) noResults.classList.remove("hidden");
+    const noResults = $('#no-results');
+    if (noResults) noResults.classList.add('hidden');
     
-    setCountersDisplay(0, 0, 0);
-    setDownloadsEnabled(false);
+    const results = $('#results');
+    if (results) results.classList.add('hidden');
+    
+    updateCounters(0, 0, 0);
   }
-
-  function setCountersDisplay(errors, warnings, opportunities) {
-    const counters = [
-      ["counter-errors", errors],
-      ["counter-warnings", warnings],
-      ["counter-opportunities", opportunities],
-      ["count-errors", errors],
-      ["count-warnings", warnings],
-      ["count-opportunities", opportunities],
-      ["count-all", errors + warnings + opportunities],
-      ["count-error", errors],
-      ["count-warning", warnings],
-      ["count-opportunity", opportunities]
-    ];
+  
+  function updateCounters(errors, warnings, opportunities) {
+    const counters = {
+      'count-error': errors,
+      'count-warning': warnings,
+      'count-opportunity': opportunities,
+      'count-all': errors + warnings + opportunities
+    };
     
-    counters.forEach(([id, value]) => {
+    Object.entries(counters).forEach(([id, value]) => {
       const el = $(`#${id}`);
-      if (el) el.textContent = String(value ?? 0);
+      if (el) el.textContent = value;
     });
+    
+    console.log('Updated counters:', counters);
   }
-
-  function setDownloadsEnabled(enabled) {
-    const btnIds = ["btn-noissues-json", "btn-noissues-csv", "btn-download-json", "btn-download-csv"];
-    btnIds.forEach((id) => {
-      const btn = $(`#${id}`);
-      if (btn) btn.disabled = !enabled;
-    });
-  }
-
+  
   function renderIssues(issues) {
-    const tbody = $("#issues-body");
+    const tbody = $('#issues-body');
     if (!tbody) return;
     
-    tbody.innerHTML = (issues || [])
-      .map((issue, idx) => {
-        const row = issue?.row_index ?? idx + 1;
-        const itemId = issue?.item_id || "";
-        const field = issue?.field || "";
-        const ruleId = issue?.rule_id || "";
-        const severity = issue?.severity || "";
-        const message = issue?.message || "";
-        const sample = issue?.sample_value || "";
-        
-        return `
-          <tr>
-            <td class="col-index">${esc(row)}</td>
-            <td class="col-item">${esc(itemId)}</td>
-            <td>${esc(field)}</td>
-            <td>${esc(ruleId)}</td>
-            <td class="sev-${esc(severity)}">${esc(severity)}</td>
-            <td>${esc(message)}</td>
-            <td>${esc(sample)}</td>
-          </tr>
-        `;
-      })
-      .join("");
-  }
-
-  function showValidationError(message) {
-    alert(`Validation failed: ${message}`);
-  }
-
-  async function doValidate() {
-    const fileInput = $("#file-input");
-    const delimiterInput = $("#delimiter");
-    const encodingInput = $("#encoding");
-    const profileSelect = $("#profile-select");
-
-    const file = fileInput?.files?.[0] || CURRENT_FILE;
-    if (!file) {
-      alert("Please select a file first");
+    if (!issues || issues.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#8b90a0;">No issues found</td></tr>';
       return;
     }
-
+    
+    tbody.innerHTML = issues.map((issue, idx) => {
+      const row = issue.row_index ?? idx + 1;
+      const severity = issue.severity || 'info';
+      return `
+        <tr>
+          <td class="col-index">${escapeHtml(row)}</td>
+          <td class="col-item">${escapeHtml(issue.item_id || '')}</td>
+          <td>${escapeHtml(issue.field || '')}</td>
+          <td>${escapeHtml(issue.rule_id || '')}</td>
+          <td class="sev-${severity}">${escapeHtml(severity)}</td>
+          <td>${escapeHtml(issue.message || '')}</td>
+          <td>${escapeHtml(issue.sample_value || '')}</td>
+        </tr>
+      `;
+    }).join('');
+    
+    console.log('Rendered', issues.length, 'issues');
+  }
+  
+  async function validateFile() {
+    const fileInput = $('#file-input');
+    const file = fileInput?.files[0] || currentFile;
+    
+    if (!file) {
+      alert('Please select a file first');
+      return;
+    }
+    
+    console.log('Validating file:', file.name);
     clearResults();
-
+    
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("encoding", encodingInput?.value || "utf-8");
-    formData.append("delimiter", delimiterInput?.value || "");
-    formData.append("profile", profileSelect?.value || "general");
-
+    formData.append('file', file);
+    formData.append('encoding', $('#encoding')?.value || 'utf-8');
+    formData.append('delimiter', $('#delimiter')?.value || '');
+    formData.append('profile', $('#profile-select')?.value || 'general');
+    
     try {
-      const response = await fetch("/validate/file", {
-        method: "POST",
-        body: formData,
+      const response = await fetch('/validate/file', {
+        method: 'POST',
+        body: formData
       });
-
+      
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || `HTTP ${response.status}`);
       }
-
+      
       const data = await response.json();
+      console.log('Validation complete:', data);
       
-      // Process results
-      const issues = data?.issues || [];
-      const summary = data?.summary || {};
+      // Handle both response formats
+      const issues = data.issues || [];
+      const summary = data.summary || {};
       
-      const errorCount = summary.items_with_errors || 0;
-      const warningCount = summary.items_with_warnings || 0;
-      const oppCount = summary.items_with_opportunities || 0;
-
-      setCountersDisplay(errorCount, warningCount, oppCount);
+      // Support both nested summary and flat response
+      const errorCount = summary.items_with_errors ?? data.errors ?? 0;
+      const warningCount = summary.items_with_warnings ?? data.warnings ?? 0;
+      const oppCount = summary.items_with_opportunities ?? data.opportunities ?? 0;
+      
+      updateCounters(errorCount, warningCount, oppCount);
       renderIssues(issues);
-
-      const noIssues = $("#no-issues");
-      const noResults = $("#no-results");
+      
+      // Show results section
+      const results = $('#results');
+      if (results) results.classList.remove('hidden');
+      
+      const noIssues = $('#no-issues');
+      const noResults = $('#no-results');
       
       if (issues.length === 0) {
-        if (noIssues) noIssues.classList.remove("hidden");
-        if (noResults) noResults.classList.add("hidden");
+        if (noIssues) noIssues.classList.remove('hidden');
+        if (noResults) noResults.classList.add('hidden');
       } else {
-        if (noIssues) noIssues.classList.add("hidden");
-        if (noResults) noResults.classList.add("hidden");
+        if (noIssues) noIssues.classList.add('hidden');
+        if (noResults) noResults.classList.add('hidden');
       }
-
-      setDownloadsEnabled(true);
       
-      console.log("Validation complete:", {
-        total: summary.items_total,
-        errors: errorCount,
-        warnings: warningCount,
-        opportunities: oppCount
-      });
-
+      console.log('Validation display updated');
+      
     } catch (err) {
-      console.error("Validation error:", err);
-      showValidationError(err.message);
+      console.error('Validation error:', err);
+      alert('Validation failed: ' + err.message);
     }
   }
-
-  function initValidate() {
-    const validateBtn = $("#btn-validate-file");
-    if (validateBtn) {
-      on(validateBtn, "click", (e) => {
-        e.preventDefault();
-        doValidate();
-      });
-    }
-  }
-
-  // -------------------- Profile Selector --------------------
+  
+  // Profile selector
   function initProfileSelector() {
-    const profileSelect = $("#profile-select");
-    if (!profileSelect) return;
-
-    on(profileSelect, "change", async () => {
-      ACTIVE_PROFILE = profileSelect.value || "general";
-      await loadSpec(ACTIVE_PROFILE);
-      renderSpecGrid();
+    const select = $('#profile-select');
+    if (!select) return;
+    
+    select.addEventListener('change', () => {
+      const profile = select.value || 'general';
+      loadSpec(profile);
     });
   }
-
-  // -------------------- Footer Year --------------------
-  function initYear() {
-    const yearEl = $("#year");
-    if (yearEl) yearEl.textContent = String(new Date().getFullYear());
-  }
-
-  // -------------------- Main Initialization --------------------
+  
+  // Initialize everything
   async function init() {
-    console.log("Initializing app...");
+    console.log('Initializing app...');
     
-    initYear();
-    initTabs();
+    // Set year
+    const yearEl = $('#year');
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
+    
+    // Setup tabs
+    const tabValidate = $('#tab-validate');
+    const tabSpec = $('#tab-spec');
+    
+    if (tabValidate) {
+      tabValidate.addEventListener('click', (e) => {
+        e.preventDefault();
+        showTab('validate');
+      });
+    }
+    
+    if (tabSpec) {
+      tabSpec.addEventListener('click', (e) => {
+        e.preventDefault();
+        showTab('spec');
+      });
+    }
+    
+    // Show validate tab by default
+    showTab('validate');
+    
+    // Setup profile selector
     initProfileSelector();
-    initDragAndDrop();
-    initBrowseButton();
-    initValidate();
-    updateSelectedFile();
-    setDownloadsEnabled(false);
-
-    // Load initial spec
-    await loadSpec("general");
-    renderSpecGrid();
     
-    console.log("App initialized successfully");
+    // Setup file handling
+    initDragDrop();
+    initBrowseButton();
+    updateFileLabel();
+    
+    // Setup validation button
+    const validateBtn = $('#btn-validate-file');
+    if (validateBtn) {
+      validateBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        validateFile();
+      });
+    }
+    
+    // Load initial spec
+    await loadSpec('general');
+    
+    console.log('App initialized successfully!');
   }
-
+  
   // Run when DOM is ready
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
+  
 })();
