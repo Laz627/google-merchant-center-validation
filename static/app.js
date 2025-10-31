@@ -445,6 +445,9 @@
       activeIssueSeverity = 'all';
       setActiveSeverityButton('all');
       renderIssues(issues);
+
+      const searchInput = $('#filter-search');
+      if (searchInput) searchInput.value = '';
       
       // Show results section
       const results = $('#results');
